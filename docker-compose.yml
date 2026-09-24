@@ -1,0 +1,70 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: karina_redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: karina_backend:latest
+    container_name: karina_backend
+    restart: always
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-karina-wellness-booking-secret-key-2024
+      - ALLOWED_HOSTS=*
+      - CORS_ALLOW_ALL_ORIGINS=True
+      - SUPABASE_URL=https://dbtsjpwwyaxtbruwfafd.supabase.co
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHNqcHd3eWF4dGJydXdmYWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxODk0MjUsImV4cCI6MjEwNTc2NTQyNX0.3L_wS9BMi-Q26F2VJNxA_pGPoWfk8AQHKmA63KPk-8w
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - redis
+
+  celery_worker:
+    image: karina_backend:latest
+    container_name: karina_celery_worker
+    command: celery -A karina_backend worker -l info
+    restart: always
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-karina-wellness-booking-secret-key-2024
+      - ALLOWED_HOSTS=*
+      - SUPABASE_URL=https://dbtsjpwwyaxtbruwfafd.supabase.co
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHNqcHd3eWF4dGJydXdmYWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxODk0MjUsImV4cCI6MjEwNTc2NTQyNX0.3L_wS9BMi-Q26F2VJNxA_pGPoWfk8AQHKmA63KPk-8w
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: karina_frontend
+    restart: always
+    ports:
+      - "5173:80"
+
+  nginx:
+    image: nginx:alpine
+    container_name: karina_nginx
+    restart: always
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+      - frontend

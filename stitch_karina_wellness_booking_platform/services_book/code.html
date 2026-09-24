@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#faf8ff;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-bright":"#faf8ff","surface-container-highest":"#dae2fd","secondary-fixed-dim":"#a4c9f9","tertiary-fixed-dim":"#a1d1b8","on-error-container":"#93000a","primary-fixed-dim":"#afc6ff","surface-container-lowest":"#ffffff","on-background":"#131b2e","outline-variant":"#c4c6d1","secondary-fixed":"#d2e4ff","tertiary-fixed":"#bdedd4","secondary-container":"#aacfff","on-secondary-fixed-variant":"#204972","on-surface-variant":"#44464f","error-container":"#ffdad6","secondary":"#3b618b","tertiary":"#001c11","tertiary-container":"#003322","inverse-on-surface":"#eef0ff","on-tertiary-container":"#6f9d86","on-tertiary":"#ffffff","surface-container":"#eaedff","on-surface":"#131b2e","on-primary":"#ffffff","on-primary-container":"#7a93cd","surface-container-high":"#e2e7ff","on-primary-fixed":"#001944","on-error":"#ffffff","primary-container":"#0a2a5e","background":"#faf8ff","error":"#ba1a1a","inverse-primary":"#afc6ff","on-secondary-container":"#325882","surface-container-low":"#f2f3ff","primary-fixed":"#d9e2ff","surface-dim":"#d2d9f4","inverse-surface":"#283044","on-secondary-fixed":"#001d36","on-primary-fixed-variant":"#2b457a","on-tertiary-fixed-variant":"#224f3c","on-secondary":"#ffffff","on-tertiary-fixed":"#002115","surface":"#faf8ff","surface-variant":"#dae2fd","primary":"#00163c","surface-tint":"#445d94","outline":"#747780"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xs":"0.25rem","margin":"2rem","space-md":"1rem","space-lg":"1.5rem","gutter-mobile":"0.75rem","space-xl":"2.5rem","gutter":"1.25rem","space-sm":"0.5rem","margin-mobile":"1rem"},fontFamily:{"label-sm":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Outfit"],"display-mobile":["Outfit"],"headline-lg-mobile":["Outfit"],"display":["Outfit"],"body-sm":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"headline-lg":["Outfit"],"label-lg":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-md":["Outfit"],"eyebrow":["Outfit"]},fontSize:{"label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"headline-sm":["18px",{"lineHeight":"26px","letterSpacing":"0.01em","fontWeight":"600"}],"display-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"0em","fontWeight":"600"}],"display":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","fontWeight":"400"}],"body-md":["15px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-lg":["16px",{"lineHeight":"22px","fontWeight":"600"}],"label-md":["14px",{"lineHeight":"20px","fontWeight":"600"}],"headline-md":["22px",{"lineHeight":"30px","letterSpacing":"0em","fontWeight":"600"}],"eyebrow":["12px",{"lineHeight":"16px","letterSpacing":"0.14em","fontWeight":"600"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_12px_rgba(10,42,94,0.04)]"><div class="h-16 px-gutter-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="logo.png" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1WfezV2A5NgWaSunvv_tVvl5fls487krfHJbbKU717KtSzYC_CdhVcTSC581-a79kIOJ54BNSRYabq9ZtFghjIjT9UFWW18xyNwmp3EWHOvTc3V4kgVn66wGwX4g0gI-KhT_Ixsm4kr05FC86UmZIcjHRHfC8sjW9FUkSiy4Tm2Dn5QugyG6RfJxO_UAqsDlV8tM3nSuVqXgLeX2I_vv5tMolY-Nwl9NrLCy-rXXwV76N6SimhVoZPSwev4pd5Hno_kKteGSNTmYA"/><div class="flex flex-col truncate"><span class="font-eyebrow text-eyebrow text-secondary uppercase tracking-widest leading-none">YOUR TRAINER</span><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold truncate leading-snug">by Karina</span></div></div><div class="flex items-center gap-space-xs shrink-0"><span class="sr-only">Services &amp; Book</span><button aria-label="Notifications" class="relative w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:text-primary active:scale-95 transition-all"><span class="material-symbols-outlined text-[24px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface"></span></button><button aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full active:scale-95 transition-all focus:outline-none"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_2px_8px_rgba(10,42,94,0.12)]" src="https://lh3.googleusercontent.com/aida/AEtjO1UwxvO7_3GTbgWd4EMPt4rt_w381oAezID3bV9-NdwIdn55FZ_9EuUxkek0b1g_CCD7OREkS7yHj5Cgb747yd7hji3o7wMsF5yMWX7Y-9WXeuNJSV87pRW9T6yotkdPzul6-kYjIysNWHJ6rcSRnoCnngzil7rsid2c6iewLxqYX2u5vPcQFLY7r3ZEkPxwmhnE8RfShmfVHjQTEbYJSi9MwKlsQzRFBydQI4ftgATXc7O0xLaTmJmS44Z2gA8121FAes4FrKhN"/></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface"><div class="flex flex-col w-full">
+<!-- Subtle Friendly Welcome Banner with Karina's Handcrafted Delight Vibes -->
+<div class="px-margin-mobile pt-space-md pb-space-sm flex items-center justify-between">
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-eyebrow text-eyebrow text-secondary uppercase tracking-widest">Movement &amp; Wellness</span>
+<span class="material-symbols-outlined text-[16px] text-secondary animate-bounce">favorite</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight font-bold">
+        Services &amp; Workshops
+      </h1>
+</div>
+<!-- Mini Coach Greeting Stamp -->
+<div class="relative shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-surface-container-high shadow-sm">
+<svg class="w-8 h-8 text-secondary" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 40 40">
+<!-- Sun sketch -->
+<circle cx="20" cy="20" r="7"></circle>
+<line x1="20" x2="20" y1="6" y2="10"></line>
+<line x1="20" x2="20" y1="30" y2="34"></line>
+<line x1="6" x2="10" y1="20" y2="20"></line>
+<line x1="30" x2="34" y1="20" y2="20"></line>
+<line x1="10.1" x2="12.9" y1="10.1" y2="12.9"></line>
+<line x1="27.1" x2="29.9" y1="27.1" y2="29.9"></line>
+<line x1="10.1" x2="12.9" y1="29.9" y2="27.1"></line>
+<line x1="27.1" x2="29.9" y1="12.9" y2="10.1"></line>
+</svg>
+<span class="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container text-[9px] font-bold">
+        ✓
+      </span>
+</div>
+</div>
+<!-- Currency Switcher Pill Bar -->
+<div class="px-margin-mobile pb-space-sm flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-secondary">payments</span>
+      Display Currency:
+    </span>
+<div class="inline-flex rounded-full bg-surface-container-high p-0.5" id="currency-toggle">
+<button class="currency-btn active-curr px-2.5 py-1 rounded-full font-label-sm text-label-sm font-semibold transition-all bg-primary-container text-on-primary shadow-xs" data-currency="KES" type="button">
+        KES (Nairobi)
+      </button>
+<button class="currency-btn px-2.5 py-1 rounded-full font-label-sm text-label-sm font-semibold transition-all text-on-surface-variant hover:text-primary" data-currency="EUR" type="button">
+        € EUR (Salzburg)
+      </button>
+</div>
+</div>
+<!-- Location Switcher Filter (Horizontal Scroll) -->
+<div class="w-full overflow-x-auto no-scrollbar pl-margin-mobile pr-space-md py-1 flex items-center gap-2">
+<button class="loc-chip whitespace-nowrap px-3.5 py-2 rounded-full font-label-md text-label-md transition-all active:scale-95 bg-secondary-container text-on-secondary-container shadow-xs font-semibold flex items-center gap-1.5" data-loc="all">
+<span class="material-symbols-outlined text-[16px]">public</span>
+      All Locations
+    </button>
+<button class="loc-chip whitespace-nowrap px-3.5 py-2 rounded-full font-label-md text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container shadow-xs flex items-center gap-1" data-loc="nairobi">
+<span>📍 Nairobi (Karen)</span>
+</button>
+<button class="loc-chip whitespace-nowrap px-3.5 py-2 rounded-full font-label-md text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container shadow-xs flex items-center gap-1" data-loc="salzburg">
+<span>🏔️ Salzburg-Anif</span>
+</button>
+<button class="loc-chip whitespace-nowrap px-3.5 py-2 rounded-full font-label-md text-label-md transition-all active:scale-95 bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container shadow-xs flex items-center gap-1" data-loc="online">
+<span>🌐 Online (Zoom)</span>
+</button>
+</div>
+<!-- Category Filter Tabs -->
+<div class="w-full overflow-x-auto no-scrollbar pl-margin-mobile pr-space-md pt-space-sm pb-space-md flex items-center gap-2">
+<button class="cat-chip whitespace-nowrap px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-all bg-primary-container text-on-primary font-semibold shadow-xs" data-category="all">
+      All
+    </button>
+<button class="cat-chip whitespace-nowrap px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-medium" data-category="1-1">
+      1:1 Training
+    </button>
+<button class="cat-chip whitespace-nowrap px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-medium" data-category="pilates">
+      Pilates &amp; Reformer
+    </button>
+<button class="cat-chip whitespace-nowrap px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-medium" data-category="hormone">
+      Hormone Coaching
+    </button>
+<button class="cat-chip whitespace-nowrap px-3 py-1.5 rounded-full font-label-sm text-label-sm transition-all bg-surface-container-low text-on-surface-variant hover:bg-surface-container font-medium" data-category="retreats">
+      Workshops &amp; Retreats
+    </button>
+</div>
+<!-- Service Cards Stream -->
+<div class="px-margin-mobile flex flex-col gap-space-md pb-space-xl" id="services-list">
+<!-- Card 1: 1:1 Personal Training & Movement -->
+<article class="service-card group relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all duration-200 hover:shadow-md" data-category="1-1" data-loc="all nairobi salzburg online">
+<div class="flex items-start justify-between gap-2 mb-space-xs">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 rounded-full bg-secondary-container px-2.5 py-0.5 font-label-sm text-label-sm text-on-secondary-container font-semibold">
+<span class="material-symbols-outlined text-[14px]">star</span> Popular
+          </span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 60 mins
+          </span>
+</div>
+<!-- Playful Mini Doodle -->
+<span class="text-secondary opacity-70" title="movement master">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewbox="0 0 24 24">
+<circle cx="12" cy="5" r="2.5"></circle>
+<path d="M12 7.5v8"></path>
+<path d="M9 10l3 2 3-2"></path>
+<path d="M9 20l3-4.5 3 4.5"></path>
+</svg>
+</span>
+</div>
+<div class="flex gap-space-sm items-start">
+<div class="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 shadow-xs bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Karina smiling warmly in a bright modern movement studio holding a Pilates resistance ring with sun streaming through tall windows, navy athletic top, natural aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGTS-62Xg8GN6nSGTSMvQGnzz8ULycDvwy6Y4IpegKjDMmSxuJk5QjHVcLaBdn3iwKqGzIcCNQEC7mfXk7pduESPk39eTvS7IYdeWMmGul1S43lP6dhbuXyNSeFDoqZM4RL4qUF7t07gIpDIiG24fIMXXQIELFdhLViWOxgNhQBc7tJCXakDGv30_m1Pf_4iBp970nCqCbZEN6s699hVr2-xcVLsG0TV0OvVi5ALbcNC6eZsXzeHj-"/>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">
+            1:1 Personal Training &amp; Movement
+          </h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">person</span> Private 1:1 Studio or Outdoor
+          </span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-sm line-clamp-2">
+        Tailored functional fitness, postural alignment, and deep core strengthening crafted specifically for your body and energy.
+      </p>
+<!-- Footer Info and CTA -->
+<div class="mt-space-md pt-space-xs flex items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-on-surface-variant uppercase">Investment</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary font-bold price-kes">KES 6,500</span>
+<span class="font-headline-md text-headline-md text-primary font-bold price-eur hidden">€75</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ session</span>
+</div>
+</div>
+<button class="book-action-btn px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm hover:shadow-md flex items-center gap-1">
+<span>Book Now</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 2: Pilates Reformer & Co — Small Group -->
+<article class="service-card group relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all duration-200 hover:shadow-md" data-category="pilates" data-loc="all nairobi salzburg">
+<div class="flex items-start justify-between gap-2 mb-space-xs">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-0.5 font-label-sm text-label-sm text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-[14px] text-secondary">groups</span> Small Group (2–4)
+          </span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 55 mins
+          </span>
+</div>
+<!-- Warm Smiley Doodle -->
+<span class="text-secondary opacity-70">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="9"></circle>
+<path d="M9 10h.01"></path>
+<path d="M15 10h.01"></path>
+<path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
+</svg>
+</span>
+</div>
+<div class="flex gap-space-sm items-start">
+<div class="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 shadow-xs bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Light wood boutique Pilates reformer studio with natural linen mats, sun-drenched serene atmosphere, crisp white and navy details" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABvzaMHYB_PKSE9WvBT7_zXS_l5526rm4kgY2wzSuANlZRK3W3Ms0QKmzTpPs0VPccFH-3eC4YEgl3SyCvTQdp3AZ9joTbcFMV5OtiGNQp8Ip__X3sKkVSN45oJsZBBlVS-4bsBfzv513MHflIgXZIjaJfJK7gpJcvG9BvD4_EvVUcN5RloQGRPeyc68mORZsyR29CB1pwx7qIB7sj2ixBfnC13-e-Uj0F-8-Gx0upCpR474-SfPzp"/>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">
+            Pilates Reformer &amp; Co
+          </h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">room</span> Anif &amp; Karen Studios
+          </span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-sm line-clamp-2">
+        Intimate athletic precision reformer flow. High personal cueing, spring tension mechanics, and spine mobility in a welcoming micro-group.
+      </p>
+<div class="mt-space-md pt-space-xs flex items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-on-surface-variant uppercase">Investment</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary font-bold price-kes">KES 3,200</span>
+<span class="font-headline-md text-headline-md text-primary font-bold price-eur hidden">€35</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ person</span>
+</div>
+</div>
+<button class="book-action-btn px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm hover:shadow-md flex items-center gap-1">
+<span>Book Now</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 3: MenoMove Happy Hormone Outdoor Training -->
+<article class="service-card group relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all duration-200 hover:shadow-md" data-category="hormone" data-loc="all nairobi">
+<div class="flex items-start justify-between gap-2 mb-space-xs">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 rounded-full bg-tertiary-fixed px-2.5 py-0.5 font-label-sm text-label-sm text-on-tertiary-fixed-variant font-semibold">
+<span class="material-symbols-outlined text-[14px]">park</span> Outdoor Vitality
+          </span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 60 mins
+          </span>
+</div>
+<!-- Sun Flourish -->
+<span class="text-secondary opacity-80 font-bold text-[14px]">☀️ Nairobi</span>
+</div>
+<div class="flex gap-space-sm items-start">
+<div class="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 shadow-xs bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Women exercising outdoors on lush green manicured lawn under acacia trees in Karen Nairobi at sunrise, uplifting supportive training circle" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANACGqD_ddFpPr-yYR_vvEBIwuM8mm0KE5slzji0PmTmKAwqrLReCwN4N-ZZFr6rvPswY7oNMh2QNdI_1V_es2TC0R_TlgKugbWiySN7KpJR0jq2FKGQcQL8h6m7hewvPV2JyykU6DySHNA_Y9-IC6T98-7puFwmFHDpm4Nzl0vt1U_prHW7MVJzKrjm7CGyoP85K14Mt5hIqVpSL7l4sM4ep23Fz4E9DslXT63krQlfbPnBAFzKrq"/>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">
+            MenoMove Happy Hormone Outdoor
+          </h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">location_on</span> Karen Country Club Park (Group 6–10)
+          </span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-sm line-clamp-2">
+        Cortisol-conscious strength intervals, lymph draining flows, and joyful camaraderie designed specifically for peri- and post-menopause.
+      </p>
+<div class="mt-space-md pt-space-xs flex items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-on-surface-variant uppercase">Investment</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary font-bold price-kes">KES 2,500</span>
+<span class="font-headline-md text-headline-md text-primary font-bold price-eur hidden">€25</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ person</span>
+</div>
+</div>
+<button class="book-action-btn px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm hover:shadow-md flex items-center gap-1">
+<span>Book Now</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 4: Hormone Coaching (1:1 Deep Dive) -->
+<article class="service-card group relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all duration-200 hover:shadow-md" data-category="hormone" data-loc="all online salzburg nairobi">
+<div class="flex items-start justify-between gap-2 mb-space-xs">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2.5 py-0.5 font-label-sm text-label-sm text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-[14px] text-secondary">spa</span> Holistic 1:1
+          </span>
+<span class="font-label-sm text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 75 mins
+          </span>
+</div>
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary uppercase tracking-wider bg-surface-container px-2 py-0.5 rounded-full">
+          In-person / Zoom
+        </span>
+</div>
+<div class="flex gap-space-sm items-start">
+<div class="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 shadow-xs bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A warm clinical tea table setting with organic herbal tea, wellness journal, fresh flowers, relaxed holistic consultation vibe" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVoiMYyWA37CXxcgee8IyRJOjIKScMEQ04CsrrkQqdv8aAvdzglWIboqSQ1P7nfFgVCLuM3k8nM_rNyl-mv0QarzwIqpwM2_lz0fZMHbFUN22KKT-reev1_i3ijEwMVwuWhzkKI-REztpwIVWplEnXVx2EgaLeStQLTxDHPYdfpkKCTGkbHMOTG6DJ7aiHl7hclb2dr5IIB8kEf7fpNXB3-cr10pwc1EBuJXGvTqkamqVGT7E4SmyV"/>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">
+            Hormone Coaching (1:1 Deep Dive)
+          </h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">psychology</span> Nutrition, Sleep &amp; Cycle Reset
+          </span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-sm line-clamp-2">
+        Evidence-based bio-individual roadmapping. Decode sleep disruptions, thyroid sluggishness, hot flashes, and optimize circadian health with Karina.
+      </p>
+<div class="mt-space-md pt-space-xs flex items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-on-surface-variant uppercase">Investment</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary font-bold price-kes">KES 8,000</span>
+<span class="font-headline-md text-headline-md text-primary font-bold price-eur hidden">€90</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ deep-dive</span>
+</div>
+</div>
+<button class="book-action-btn px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm hover:shadow-md flex items-center gap-1">
+<span>Book Now</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 5: Happy Hormones Workshop Series (Part 1-3) -->
+<article class="service-card group relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all duration-200 hover:shadow-md" data-category="retreats" data-loc="all online salzburg nairobi">
+<div class="flex items-start justify-between gap-2 mb-space-xs">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 rounded-full bg-secondary-fixed px-2.5 py-0.5 font-label-sm text-label-sm text-on-secondary-fixed-variant font-semibold">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span> 3-Part Masterclass
+          </span>
+<span class="font-label-sm text-label-sm text-secondary">Cohort Starting Nov</span>
+</div>
+<span class="text-secondary opacity-70">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</span>
+</div>
+<div class="flex gap-space-sm items-start">
+<div class="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 shadow-xs bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="An intimate workshop circle of women sharing workbook notes over green matcha, warm cozy wooden studio with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAj0u9wjpAH7szzaitZZUMhdbPySJoVvp6l6OBBxIizmu7BpK_wB2Ks4GbUlavSzm4GWSBfodXtRn-6QBm2BcqCADb038z0dOjYQeQAeKULxYZI0xNR6oSiI7ihfKj5pWLBGEmugBbvZlSdBEQlPzuT4QISLDZU_W3B4mEkNxARvADK4x24NpD7Fof3EaM0sgGcRVkSvbySH6I6pISX3ggUJvWcN38MKrgPH6cnbMOAGW-DIkkibA1E"/>
+</div>
+<div class="flex flex-col min-w-0 flex-1">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">
+            Happy Hormones Workshop Series
+          </h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">event_note</span> Part 1–3 Complete Lifecycle Mastery
+          </span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-sm line-clamp-2">
+        Part 1: Female cycle sync. Part 2: Cortisol &amp; adrenal replenishment. Part 3: Embracing menopause with strength, muscle tone, and radiant peace.
+      </p>
+<!-- Workshop syllabus micro list -->
+<div class="mt-space-sm p-space-xs rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Includes workbook, guided movement flows &amp; recipe book</span>
+</div>
+</div>
+<div class="mt-space-md pt-space-xs flex items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-on-surface-variant uppercase">Full Series</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary font-bold price-kes">KES 14,000</span>
+<span class="font-headline-md text-headline-md text-primary font-bold price-eur hidden">€145</span>
+</div>
+</div>
+<button class="book-action-btn px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm hover:shadow-md flex items-center gap-1">
+<span>Reserve Spot</span>
+<span class="material-symbols-outlined text-[16px]">how_to_reg</span>
+</button>
+</div>
+</article>
+<!-- Card 6: Kenya Bush & Beach Wellness Retreat 2025 -->
+<article class="service-card group relative bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all duration-200 hover:shadow-md" data-category="retreats" data-loc="all nairobi">
+<!-- High Priority Badge Banner -->
+<div class="flex items-start justify-between gap-2 mb-space-xs">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 rounded-full bg-error-container px-2.5 py-0.5 font-label-sm text-label-sm text-on-error-container font-semibold animate-pulse">
+<span class="material-symbols-outlined text-[14px]">local_fire_department</span> Only 3 spots left!
+          </span>
+<span class="font-label-sm text-label-sm text-secondary">Tsavo &amp; Diani</span>
+</div>
+<span class="font-eyebrow text-eyebrow text-secondary uppercase font-bold">5 Days</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<div class="relative w-full h-36 rounded-lg overflow-hidden shadow-xs bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Breathtaking Kenya safari landscape with Mt Kilimanjaro view, luxury safari tent deck where women are doing outdoor sunrise Pilates on wooden platform, serene and magical" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGg_Wb20LBo9ax1y-Pf-Mxv9FRFtbVtfRdjK2EC8hiG_2ueXKWcF5HIgS1jrSIvXaLXVKPjUL0D_NrmJRkkgfJ_Z96v3j3fRZhG4PUKkOYct54iUt8AJ_KtPJ0ysIX42NjJvpo3NSG1fdsJw8bizwm6y8xjrw8T1BhOVy89bDx0oaVQJ51xifu-o_E1DPFspMQBQS7RqYXh6cfmjV19X2AQ3FPuIjxmHhk2NKV9g8UOtl7v5weEyl5"/>
+<div class="absolute bottom-2 left-2 px-2.5 py-1 rounded-full bg-primary/80 backdrop-blur-sm text-on-primary font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">flight_takeoff</span> Tsavo Wildlife &amp; White Sands Diani
+          </div>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">
+            Kenya Bush &amp; Beach Wellness Retreat 2025
+          </h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-secondary">nature_people</span> Daily Pilates, Morning Game Drives &amp; Hormone Nutrition
+          </span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-space-sm">
+        Karina’s signature African movement immersion. Reconnect with raw nature, restorative Pilates at sunset, and nourishing coastal superfood dining.
+      </p>
+<div class="mt-space-md pt-space-xs flex items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-on-surface-variant uppercase">Deposit to secure</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary font-bold price-kes">KES 35,000</span>
+<span class="font-headline-md text-headline-md text-primary font-bold price-eur hidden">€250</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">deposit</span>
+</div>
+</div>
+<button class="book-action-btn px-4 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-95 shadow-sm hover:shadow-md flex items-center gap-1">
+<span>Enquire &amp; Reserve</span>
+<span class="material-symbols-outlined text-[16px]">travel_explore</span>
+</button>
+</div>
+</article>
+</div>
+<!-- Micro-Quote Floating Delight Box -->
+<div class="px-margin-mobile pb-space-lg">
+<div class="relative bg-surface-container-high rounded-xl p-space-md shadow-xs flex items-center gap-space-md overflow-hidden">
+<!-- Decorative hand-drawn heart -->
+<div class="w-12 h-12 rounded-full bg-surface-container-lowest shrink-0 flex items-center justify-center shadow-xs text-secondary">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+</svg>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-secondary font-bold">"Movement is freedom &amp; joy."</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">
+          Not sure which service suits your current life stage? Let’s chat on WhatsApp for a quick 10-min consult.
+        </span>
+</div>
+</div>
+</div>
+<!-- Interactive Modal: Quick Booking Confirmation Drawer (Hidden by default) -->
+<div class="fixed inset-0 z-50 bg-primary/40 backdrop-blur-sm flex items-end justify-center hidden opacity-0 transition-opacity duration-300" id="booking-modal">
+<div class="w-full max-w-lg bg-surface-container-lowest rounded-t-xl p-space-lg shadow-xl flex flex-col gap-space-md transform translate-y-full transition-transform duration-300 ease-out" id="modal-container">
+<div class="w-12 h-1.5 bg-outline-variant/60 rounded-full mx-auto -mt-2 mb-2"></div>
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-secondary uppercase font-semibold">Confirm Selection</span>
+<h3 class="font-headline-md text-headline-md text-primary font-bold" id="modal-service-title">
+            1:1 Personal Training &amp; Movement
+          </h3>
+</div>
+<button class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant active:scale-95" id="modal-close-btn">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-2">
+<div class="flex justify-between items-center font-label-md text-label-md">
+<span class="text-on-surface-variant">Trainer</span>
+<span class="text-primary font-semibold">Karina (Master in Motion)</span>
+</div>
+<div class="flex justify-between items-center font-label-md text-label-md">
+<span class="text-on-surface-variant">Location</span>
+<span class="text-primary font-semibold" id="modal-location-text">Nairobi / Salzburg / Zoom</span>
+</div>
+<div class="flex justify-between items-center font-label-md text-label-md">
+<span class="text-on-surface-variant">Rate</span>
+<span class="text-primary font-bold text-headline-sm" id="modal-price-text">KES 6,500</span>
+</div>
+</div>
+<!-- Quick Date/Time Micro Selector -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium">Select Preferred Slot:</label>
+<div class="grid grid-cols-3 gap-2">
+<button class="slot-btn py-2 px-2 rounded-lg bg-surface-container text-primary font-label-sm text-label-sm font-semibold active:bg-primary-container active:text-on-primary focus:bg-primary-container focus:text-on-primary" type="button">
+            Tomorrow 09:00
+          </button>
+<button class="slot-btn py-2 px-2 rounded-lg bg-surface-container text-primary font-label-sm text-label-sm font-semibold active:bg-primary-container active:text-on-primary focus:bg-primary-container focus:text-on-primary" type="button">
+            Thu 14:30
+          </button>
+<button class="slot-btn py-2 px-2 rounded-lg bg-surface-container text-primary font-label-sm text-label-sm font-semibold active:bg-primary-container active:text-on-primary focus:bg-primary-container focus:text-on-primary" type="button">
+            Sat 10:00
+          </button>
+</div>
+</div>
+<!-- Payment / Booking CTA -->
+<div class="flex flex-col gap-2 pt-space-xs">
+<button class="w-full py-3.5 rounded-full bg-primary-container text-on-primary font-label-lg text-label-lg font-bold shadow-md active:scale-95 transition-all flex items-center justify-center gap-2" id="modal-confirm-pay">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+<span>Continue to Secure Checkout</span>
+</button>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-center">
+          Instant M-Pesa &amp; Card confirmation with free 24h cancellation.
+        </p>
+</div>
+</div>
+</div>
+<!-- Toast Notification for Micro-Delight -->
+<div class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-primary text-on-primary px-4 py-2.5 rounded-full font-label-md text-label-md shadow-xl flex items-center gap-2 transition-all duration-300 transform opacity-0 translate-y-4 pointer-events-none z-50" id="booking-toast">
+<span class="material-symbols-outlined text-[20px] text-tertiary-fixed">celebration</span>
+<span id="toast-text">Slot held! Preparing booking screen...</span>
+</div>
+</div>
+<script>
+  (function() {
+    // 1. Currency Switching Logic (KES vs EUR)
+    const currencyButtons = document.querySelectorAll('.currency-btn');
+    const priceKesElements = document.querySelectorAll('.price-kes');
+    const priceEurElements = document.querySelectorAll('.price-eur');
+    let currentCurrency = 'KES';
+
+    currencyButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currencyButtons.forEach(b => {
+          b.classList.remove('bg-primary-container', 'text-on-primary', 'shadow-xs');
+          b.classList.add('text-on-surface-variant');
+        });
+        btn.classList.add('bg-primary-container', 'text-on-primary', 'shadow-xs');
+        btn.classList.remove('text-on-surface-variant');
+
+        const curr = btn.getAttribute('data-currency');
+        currentCurrency = curr;
+
+        if (curr === 'KES') {
+          priceKesElements.forEach(el => el.classList.remove('hidden'));
+          priceEurElements.forEach(el => el.classList.add('hidden'));
+        } else {
+          priceKesElements.forEach(el => el.classList.add('hidden'));
+          priceEurElements.forEach(el => el.classList.remove('hidden'));
+        }
+      });
+    });
+
+    // 2. Location & Category Filtering
+    const locChips = document.querySelectorAll('.loc-chip');
+    const catChips = document.querySelectorAll('.cat-chip');
+    const cards = document.querySelectorAll('.service-card');
+
+    let selectedLoc = 'all';
+    let selectedCat = 'all';
+
+    function filterCards() {
+      cards.forEach(card => {
+        const cardLoc = card.getAttribute('data-loc') || '';
+        const cardCat = card.getAttribute('data-category') || '';
+
+        const locMatch = selectedLoc === 'all' || cardLoc.includes(selectedLoc);
+        const catMatch = selectedCat === 'all' || cardCat === selectedCat;
+
+        if (locMatch && catMatch) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    locChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        locChips.forEach(c => {
+          c.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'font-semibold');
+          c.classList.add('bg-surface-container-lowest', 'text-on-surface-variant');
+        });
+        chip.classList.add('bg-secondary-container', 'text-on-secondary-container', 'font-semibold');
+        chip.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant');
+
+        selectedLoc = chip.getAttribute('data-loc');
+        filterCards();
+      });
+    });
+
+    catChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        catChips.forEach(c => {
+          c.classList.remove('bg-primary-container', 'text-on-primary', 'font-semibold');
+          c.classList.add('bg-surface-container-low', 'text-on-surface-variant', 'font-medium');
+        });
+        chip.classList.add('bg-primary-container', 'text-on-primary', 'font-semibold');
+        chip.classList.remove('bg-surface-container-low', 'text-on-surface-variant', 'font-medium');
+
+        selectedCat = chip.getAttribute('data-category');
+        filterCards();
+      });
+    });
+
+    // 3. Quick Booking Drawer Trigger
+    const modal = document.getElementById('booking-modal');
+    const modalContainer = document.getElementById('modal-container');
+    const closeBtn = document.getElementById('modal-close-btn');
+    const modalTitle = document.getElementById('modal-service-title');
+    const modalPrice = document.getElementById('modal-price-text');
+    const confirmPayBtn = document.getElementById('modal-confirm-pay');
+    const toast = document.getElementById('booking-toast');
+    const toastText = document.getElementById('toast-text');
+
+    function openModal(title, price) {
+      modalTitle.textContent = title;
+      modalPrice.textContent = price;
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modalContainer.classList.remove('translate-y-full');
+      }, 10);
+    }
+
+    function closeModal() {
+      modalContainer.classList.add('translate-y-full');
+      modal.classList.add('opacity-0');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    document.querySelectorAll('.book-action-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const card = e.target.closest('.service-card');
+        const title = card.querySelector('h2').textContent.trim();
+        const price = (currentCurrency === 'KES') 
+          ? card.querySelector('.price-kes').textContent.trim()
+          : card.querySelector('.price-eur').textContent.trim();
+        
+        openModal(title, price);
+      });
+    });
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Slot selection micro-interaction
+    document.querySelectorAll('.slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.slot-btn').forEach(b => {
+          b.classList.remove('bg-primary-container', 'text-on-primary');
+          b.classList.add('bg-surface-container', 'text-primary');
+        });
+        btn.classList.add('bg-primary-container', 'text-on-primary');
+        btn.classList.remove('bg-surface-container', 'text-primary');
+      });
+    });
+
+    // Checkout Confirmation Toast
+    confirmPayBtn.addEventListener('click', () => {
+      closeModal();
+      toastText.textContent = `Spot reserved for ${modalTitle.textContent}! Directing to checkout...`;
+      toast.classList.remove('opacity-0', 'translate-y-4');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-4');
+      }, 3000);
+    });
+
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_24px_rgba(10,42,94,0.06)]" data-active-classes="text-primary-container font-semibold [&amp;_span.active-dot]:opacity-100"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group relative" data-path="home" href="#"><span class="material-symbols-outlined text-[24px]">spa</span><span class="font-label-sm text-label-sm leading-tight mt-0.5">Home</span><span class="active-dot opacity-0 transition-opacity w-1 h-1 rounded-full bg-secondary-container mt-0.5"></span></a><a class="flex flex-col items-center justify-center w-20 h-12 text-on-surface-variant transition-colors group relative" data-path="services-and-book" href="#"><span class="material-symbols-outlined text-[24px]">calendar_add_on</span><span class="font-label-sm text-label-sm leading-tight mt-0.5">Book</span><span class="active-dot opacity-0 transition-opacity w-1 h-1 rounded-full bg-secondary-container mt-0.5"></span></a><a class="flex flex-col items-center justify-center w-20 h-12 text-on-surface-variant transition-colors group relative" data-path="my-bookings" href="#"><span class="material-symbols-outlined text-[24px]">event_available</span><span class="font-label-sm text-label-sm leading-tight mt-0.5">Bookings</span><span class="active-dot opacity-0 transition-opacity w-1 h-1 rounded-full bg-secondary-container mt-0.5"></span></a><a class="flex flex-col items-center justify-center w-20 h-12 text-on-surface-variant transition-colors group relative" data-path="profile-and-settings" href="#"><span class="material-symbols-outlined text-[24px]">tune</span><span class="font-label-sm text-label-sm leading-tight mt-0.5">Profile</span><span class="active-dot opacity-0 transition-opacity w-1 h-1 rounded-full bg-secondary-container mt-0.5"></span></a></div></nav></body></html>

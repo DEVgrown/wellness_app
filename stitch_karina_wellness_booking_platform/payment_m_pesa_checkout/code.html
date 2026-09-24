@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;margin:0;padding:0;background-color:#faf8ff;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-bright":"#faf8ff","surface-container-highest":"#dae2fd","secondary-fixed-dim":"#a4c9f9","tertiary-fixed-dim":"#a1d1b8","on-error-container":"#93000a","primary-fixed-dim":"#afc6ff","surface-container-lowest":"#ffffff","on-background":"#131b2e","outline-variant":"#c4c6d1","secondary-fixed":"#d2e4ff","tertiary-fixed":"#bdedd4","secondary-container":"#aacfff","on-secondary-fixed-variant":"#204972","on-surface-variant":"#44464f","error-container":"#ffdad6","secondary":"#3b618b","tertiary":"#001c11","tertiary-container":"#003322","inverse-on-surface":"#eef0ff","on-tertiary-container":"#6f9d86","on-tertiary":"#ffffff","surface-container":"#eaedff","on-surface":"#131b2e","on-primary":"#ffffff","on-primary-container":"#7a93cd","surface-container-high":"#e2e7ff","on-primary-fixed":"#001944","on-error":"#ffffff","primary-container":"#0a2a5e","background":"#faf8ff","error":"#ba1a1a","inverse-primary":"#afc6ff","on-secondary-container":"#325882","surface-container-low":"#f2f3ff","primary-fixed":"#d9e2ff","surface-dim":"#d2d9f4","inverse-surface":"#283044","on-secondary-fixed":"#001d36","on-primary-fixed-variant":"#2b457a","on-tertiary-fixed-variant":"#224f3c","on-secondary":"#ffffff","on-tertiary-fixed":"#002115","surface":"#faf8ff","surface-variant":"#dae2fd","primary":"#00163c","surface-tint":"#445d94","outline":"#747780"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xs":"0.25rem","margin":"2rem","space-md":"1rem","space-lg":"1.5rem","gutter-mobile":"0.75rem","space-xl":"2.5rem","gutter":"1.25rem","space-sm":"0.5rem","margin-mobile":"1rem"},fontFamily:{"label-sm":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-sm":["Outfit"],"display-mobile":["Outfit"],"headline-lg-mobile":["Outfit"],"display":["Outfit"],"body-sm":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"headline-lg":["Outfit"],"label-lg":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"headline-md":["Outfit"],"eyebrow":["Outfit"]},fontSize:{"label-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"headline-sm":["18px",{"lineHeight":"26px","letterSpacing":"0.01em","fontWeight":"600"}],"display-mobile":["36px",{"lineHeight":"44px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-lg-mobile":["26px",{"lineHeight":"34px","letterSpacing":"0em","fontWeight":"600"}],"display":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"20px","fontWeight":"400"}],"body-md":["15px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-lg":["16px",{"lineHeight":"22px","fontWeight":"600"}],"label-md":["14px",{"lineHeight":"20px","fontWeight":"600"}],"headline-md":["22px",{"lineHeight":"30px","letterSpacing":"0em","fontWeight":"600"}],"eyebrow":["12px",{"lineHeight":"16px","letterSpacing":"0.14em","fontWeight":"600"}]}}}};</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_12px_rgba(10,42,94,0.04)]"><div class="h-16 px-gutter-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-xs min-w-0"><button aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:text-primary active:scale-95 transition-all" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back</span></button><img alt="logo.png" class="h-7 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1WfezV2A5NgWaSunvv_tVvl5fls487krfHJbbKU717KtSzYC_CdhVcTSC581-a79kIOJ54BNSRYabq9ZtFghjIjT9UFWW18xyNwmp3EWHOvTc3V4kgVn66wGwX4g0gI-KhT_Ixsm4kr05FC86UmZIcjHRHfC8sjW9FUkSiy4Tm2Dn5QugyG6RfJxO_UAqsDlV8tM3nSuVqXgLeX2I_vv5tMolY-Nwl9NrLCy-rXXwV76N6SimhVoZPSwev4pd5Hno_kKteGSNTmYA"/><h1 class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold truncate ml-1">Session Checkout</h1></div><div class="flex items-center gap-space-xs shrink-0"><button aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full active:scale-95 transition-all focus:outline-none"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_2px_8px_rgba(10,42,94,0.12)]" src="https://lh3.googleusercontent.com/aida/AEtjO1UwxvO7_3GTbgWd4EMPt4rt_w381oAezID3bV9-NdwIdn55FZ_9EuUxkek0b1g_CCD7OREkS7yHj5Cgb747yd7hji3o7wMsF5yMWX7Y-9WXeuNJSV87pRW9T6yotkdPzul6-kYjIysNWHJ6rcSRnoCnngzil7rsid2c6iewLxqYX2u5vPcQFLY7r3ZEkPxwmhnE8RfShmfVHjQTEbYJSi9MwKlsQzRFBydQI4ftgATXc7O0xLaTmJmS44Z2gA8121FAes4FrKhN"/></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-surface"><div class="flex flex-col w-full">
+<div class="px-gutter-mobile py-space-sm flex flex-col gap-space-md">
+<!-- Brand Emblem & Friendly Note -->
+<div class="flex items-center justify-between bg-surface-container-low px-space-md py-space-sm rounded-xl">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-primary shadow-sm shrink-0">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="6" viewbox="0 0 100 100">
+<!-- Stylized Dual Figures inspired by studio mark -->
+<circle cx="42" cy="24" r="10"></circle>
+<path d="M26 34 C44 33, 52 42, 40 55 C34 62, 35 74, 46 80"></path>
+<circle cx="62" cy="24" r="10" stroke="#7DA2D0"></circle>
+<path d="M46 34 C64 33, 72 42, 60 55 C54 62, 55 74, 66 80" stroke="#7DA2D0"></path>
+</svg>
+</div>
+<div>
+<p class="font-eyebrow text-eyebrow tracking-widest text-secondary uppercase">Your Trainer · Karina</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Boutique Reformer &amp; Mobility Studio</p>
+</div>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-highest px-space-xs py-0.5 rounded-full text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary">verified</span>
+<span>Secure</span>
+</div>
+</div>
+<!-- Booking Summary Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-[0_4px_20px_-2px_rgba(10,42,94,0.05),0_2px_6px_-1px_rgba(15,23,42,0.03)] flex flex-col gap-space-sm relative overflow-hidden">
+<!-- Ambient Studio Texture Tag -->
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex flex-col">
+<span class="font-eyebrow text-eyebrow text-secondary uppercase tracking-wider">Private Session</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">1:1 Pilates Reformer</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">With Lead Coach Karina</p>
+</div>
+<div class="w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow-sm bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Sunlit minimalist boutique Pilates studio in Karen Nairobi with high wooden beams, polished wooden reformer carriage, lush tropical courtyard plants visible through large floor-to-ceiling glass windows, warm tranquil cream and soft blue atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIhceF5FuSQGaZ8rX2pVYO8rh8yZ9nhBfkTsVCAyhH1YM-AjJP4nmzjorrouXByJqjzVH99mCExBBeNc9Tz-ZRDLm8gSKnA4Ph4voaADJ-BTCc10aEgN2k2Jjkyofd28Zc0fK4410AJhY5kI77Bwo7GtRWru9_b045XNEum_DDtoVl9BF8HWMCK_yOb7kiuzYr8MgdOyElfXggJm5ADAxdew-GwhFbH_X0D-Oa9P0B-Ld-ubvCK4-8"/>
+</div>
+</div>
+<!-- Session Meta Details -->
+<div class="grid grid-cols-1 gap-2 pt-space-xs">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px] text-secondary">calendar_today</span>
+<span class="font-label-md text-label-md text-on-surface">Saturday, 26 Oct 2024</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">• 09:30 AM (EAT)</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px] text-secondary">location_on</span>
+<span class="font-body-sm text-body-sm text-on-surface">Karen Movement Studio, Tree Lane, Nairobi</span>
+</div>
+</div>
+<!-- Currency Switcher & Total Due -->
+<div class="mt-space-xs pt-space-sm bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Total Amount Due</span>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-semibold" id="display-amount">KES 6,500</span>
+<span class="font-label-sm text-label-sm text-secondary" id="converted-amount">(~ €45 EUR)</span>
+</div>
+</div>
+<div class="flex items-center p-0.5 bg-surface-container-highest rounded-full shadow-inner text-on-surface">
+<button class="px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-primary text-on-primary shadow-sm transition-all" id="curr-kes" onclick="setCurrency('KES')">KES</button>
+<button class="px-2.5 py-1 rounded-full font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-all" id="curr-eur" onclick="setCurrency('EUR')">EUR</button>
+</div>
+</div>
+</div>
+<!-- Upsell Pack Banner with Organic Motif -->
+<div class="bg-secondary-fixed/50 rounded-xl p-space-md flex flex-col gap-2 relative shadow-sm">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[22px]">auto_awesome</span>
+<span class="font-label-md text-label-md text-on-secondary-fixed-variant">Save 15% with a 5-Session Pack</span>
+</div>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm px-2 py-0.5 rounded-full font-semibold">Popular</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Lock in weekly alignment &amp; progressive strength. Pay KES 27,600 instead of KES 32,500.</p>
+<div class="pt-1 flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary font-medium">5 private 60-min bookings</span>
+<button class="bg-surface-container-lowest text-primary font-label-sm text-label-sm px-3.5 py-1.5 rounded-full shadow-sm hover:bg-surface-container transition-all active:scale-95" id="pack-btn" onclick="applyPack()">Apply Pack</button>
+</div>
+</div>
+<!-- Payment Methods Section Header -->
+<div class="flex items-center justify-between mt-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-primary font-semibold">Choose Payment Method</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary-fixed-dim">verified_user</span> Instant Confirmation
+      </span>
+</div>
+<!-- Payment Tiles Stack -->
+<div class="flex flex-col gap-space-sm">
+<!-- TILE 1: M-Pesa (Selected by Default) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-[0_4px_20px_-2px_rgba(10,42,94,0.05)] transition-all cursor-pointer" id="tile-mpesa" onclick="selectTile('mpesa')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-tertiary-container text-on-tertiary flex items-center justify-center font-headline-sm text-headline-sm shadow-sm">
+<span class="material-symbols-outlined text-[20px] text-tertiary-fixed">smartphone</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<p class="font-label-lg text-label-lg text-primary font-semibold">M-Pesa (Safaricom)</p>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant text-label-sm font-label-sm px-2 py-0.5 rounded-full">STK Push</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Instant mobile prompt on your phone</p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</div>
+<!-- Inner Expanded STK Push Form -->
+<div class="mt-space-md pt-space-sm flex flex-col gap-space-sm" id="mpesa-form-body">
+<div class="bg-surface-container-low rounded-lg p-space-sm flex flex-col gap-1.5">
+<div class="flex items-center justify-between">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-medium">Safaricom Phone Number</label>
+<button class="text-secondary font-label-sm text-label-sm flex items-center gap-1 active:scale-95" onclick="editPhone(event)" type="button">
+<span class="material-symbols-outlined text-[14px]">edit</span> Edit
+              </button>
+</div>
+<div class="flex items-center bg-surface-container-lowest rounded-lg px-3 py-2 shadow-inner">
+<span class="font-label-md text-label-md text-primary font-semibold mr-2">🇰🇪</span>
+<input class="font-label-md text-label-md text-on-surface bg-transparent outline-none w-full" id="phone-input" readonly="" type="tel" value="+254 712 345 678"/>
+</div>
+</div>
+<div class="flex items-start gap-2 bg-secondary-fixed/40 p-space-sm rounded-lg">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-on-secondary-fixed-variant">
+              A secure popup will appear automatically on your handset. Enter your secret M-Pesa PIN to complete booking.
+            </p>
+</div>
+<!-- Live STK Push Simulation / CTA -->
+<div id="stk-trigger-container">
+<button class="w-full h-12 bg-primary text-on-primary rounded-full font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all" id="pay-btn" onclick="startSTKPush(event)">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+<span id="pay-btn-label">Pay KES 6,500 with M-Pesa</span>
+</button>
+</div>
+<!-- Dynamic STK Countdown Status Widget (Hidden until triggered) -->
+<div class="hidden bg-surface-container p-space-md rounded-xl flex-col items-center text-center gap-space-sm animate-fadeIn" id="stk-progress-card">
+<div class="relative w-14 h-14 flex items-center justify-center">
+<svg class="w-14 h-14 -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-variant" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-tertiary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" id="progress-circle" stroke="currentColor" stroke-dasharray="100, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<span class="absolute font-headline-sm text-headline-sm font-semibold text-primary" id="countdown-text">45s</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">Waiting for PIN entry...</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Check screen on <span class="font-semibold text-primary">+254 712 *** 678</span></p>
+</div>
+<div class="flex items-center gap-2">
+<button class="font-label-sm text-label-sm text-error bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-sm hover:bg-error-container" onclick="cancelSTK(event)">Cancel Request</button>
+<button class="font-label-sm text-label-sm text-secondary bg-surface-container-lowest px-3 py-1.5 rounded-full shadow-sm" onclick="resendSTK(event)">Resend Prompt</button>
+</div>
+</div>
+</div>
+</div>
+<!-- TILE 2: Credit / Debit Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all cursor-pointer" id="tile-card" onclick="selectTile('card')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">credit_card</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-primary font-semibold">Credit / Debit Card</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Visa, Mastercard, Amex, UnionPay</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="bg-surface-container px-2 py-0.5 rounded text-eyebrow font-eyebrow text-on-surface-variant">VISA</span>
+<span class="bg-surface-container px-2 py-0.5 rounded text-eyebrow font-eyebrow text-on-surface-variant">MC</span>
+<div class="w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center ml-1" id="radio-card"></div>
+</div>
+</div>
+<div class="hidden mt-space-md pt-space-sm flex flex-col gap-2" id="card-form-body">
+<input class="w-full h-11 px-3 bg-surface-container-low rounded-lg font-body-sm text-body-sm text-on-surface outline-none" placeholder="Cardholder Name" type="text"/>
+<input class="w-full h-11 px-3 bg-surface-container-low rounded-lg font-body-sm text-body-sm text-on-surface outline-none" placeholder="Card Number (•••• •••• •••• ••••)" type="text"/>
+<div class="grid grid-cols-2 gap-2">
+<input class="w-full h-11 px-3 bg-surface-container-low rounded-lg font-body-sm text-body-sm text-on-surface outline-none" placeholder="MM / YY" type="text"/>
+<input class="w-full h-11 px-3 bg-surface-container-low rounded-lg font-body-sm text-body-sm text-on-surface outline-none" maxlength="4" placeholder="CVV" type="password"/>
+</div>
+<button class="w-full h-12 mt-1 bg-primary text-on-primary rounded-full font-label-lg text-label-lg shadow-md active:scale-95 transition-all">
+            Pay with Card
+          </button>
+</div>
+</div>
+<!-- TILE 3: Apple Pay / Google Pay -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all cursor-pointer" id="tile-digital" onclick="selectTile('digital')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">contactless</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-primary font-semibold">Apple Pay / Google Pay</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Fast biometric one-tap checkout</p>
+</div>
+</div>
+<div class="w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center" id="radio-digital"></div>
+</div>
+<div class="hidden mt-space-md pt-space-sm" id="digital-form-body">
+<button class="w-full h-12 bg-on-background text-surface-container-lowest rounded-full font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">fingerprint</span>
+<span>Pay with Biometrics</span>
+</button>
+</div>
+</div>
+<!-- TILE 4: Pay in Studio -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm transition-all cursor-pointer" id="tile-studio" onclick="selectTile('studio')">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-secondary shrink-0">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<p class="font-label-lg text-label-lg text-primary font-semibold">Pay in Studio / Cash</p>
+<span class="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-1.5 py-0.5 rounded text-[10px]">Client status</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Subject to Karina's approval for regulars</p>
+</div>
+</div>
+<div class="w-5 h-5 rounded-full bg-surface-container-high flex items-center justify-center" id="radio-studio"></div>
+</div>
+<div class="hidden mt-space-md pt-space-sm flex flex-col gap-2" id="studio-form-body">
+<p class="font-body-sm text-body-sm text-on-surface-variant">We hold your reformer bed for 2 hours while Karina confirms your recurring client standing.</p>
+<button class="w-full h-12 bg-secondary text-on-secondary rounded-full font-label-lg text-label-lg active:scale-95 transition-all">
+            Request Studio Reservation
+          </button>
+</div>
+</div>
+</div>
+<!-- Assurance & Cancellation Policy Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-2 shadow-sm">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined text-[20px]">published_with_changes</span>
+<h4 class="font-label-md text-label-md font-semibold text-on-surface">Flexible Cancellation Guarantee</h4>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+        Life happens! Enjoy free rescheduling or 100% instant refund up to 24 hours prior to your scheduled session.
+      </p>
+</div>
+<!-- Trust & Partner Badges -->
+<div class="py-space-sm flex flex-col items-center justify-center text-center gap-1.5 text-on-surface-variant">
+<div class="flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-tertiary">lock</span>
+<span class="font-label-sm text-label-sm font-medium">256-Bit SSL Encrypted Banking Security</span>
+</div>
+<p class="font-eyebrow text-eyebrow text-outline tracking-wider">OFFICIAL SAFARICOM M-PESA &amp; VISA API INTEGRATION</p>
+</div>
+</div>
+</div>
+<script>
+  let currentCurrency = 'KES';
+  let isPackApplied = false;
+  let countdownTimer = null;
+
+  function setCurrency(curr) {
+    currentCurrency = curr;
+    const kesBtn = document.getElementById('curr-kes');
+    const eurBtn = document.getElementById('curr-eur');
+    const displayAmount = document.getElementById('display-amount');
+    const convertedAmount = document.getElementById('converted-amount');
+    const payBtnLabel = document.getElementById('pay-btn-label');
+
+    if (curr === 'KES') {
+      kesBtn.className = 'px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-primary text-on-primary shadow-sm transition-all';
+      eurBtn.className = 'px-2.5 py-1 rounded-full font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-all';
+      const amt = isPackApplied ? 'KES 27,600' : 'KES 6,500';
+      displayAmount.innerText = amt;
+      convertedAmount.innerText = isPackApplied ? '(~ €190 EUR)' : '(~ €45 EUR)';
+      if (payBtnLabel) payBtnLabel.innerText = `Pay ${amt} with M-Pesa`;
+    } else {
+      eurBtn.className = 'px-2.5 py-1 rounded-full font-label-sm text-label-sm bg-primary text-on-primary shadow-sm transition-all';
+      kesBtn.className = 'px-2.5 py-1 rounded-full font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-all';
+      const amt = isPackApplied ? '€190 EUR' : '€45 EUR';
+      displayAmount.innerText = amt;
+      convertedAmount.innerText = isPackApplied ? '(~ KES 27,600)' : '(~ KES 6,500)';
+      if (payBtnLabel) payBtnLabel.innerText = `Pay ${amt} with M-Pesa`;
+    }
+  }
+
+  function applyPack() {
+    isPackApplied = !isPackApplied;
+    const btn = document.getElementById('pack-btn');
+    if (isPackApplied) {
+      btn.innerText = 'Pack Applied ✓';
+      btn.className = 'bg-tertiary text-on-tertiary font-label-sm text-label-sm px-3.5 py-1.5 rounded-full shadow-sm transition-all';
+    } else {
+      btn.innerText = 'Apply Pack';
+      btn.className = 'bg-surface-container-lowest text-primary font-label-sm text-label-sm px-3.5 py-1.5 rounded-full shadow-sm hover:bg-surface-container transition-all';
+    }
+    setCurrency(currentCurrency);
+  }
+
+  function selectTile(type) {
+    const tiles = ['mpesa', 'card', 'digital', 'studio'];
+    tiles.forEach(t => {
+      const tileEl = document.getElementById(`tile-${t}`);
+      const bodyEl = document.getElementById(`${t}-form-body`);
+      if (t === type) {
+        if (bodyEl) bodyEl.classList.remove('hidden');
+        tileEl.classList.add('shadow-[0_4px_20px_-2px_rgba(10,42,94,0.08)]');
+      } else {
+        if (bodyEl) bodyEl.classList.add('hidden');
+        tileEl.classList.remove('shadow-[0_4px_20px_-2px_rgba(10,42,94,0.08)]');
+      }
+    });
+  }
+
+  function editPhone(e) {
+    e.stopPropagation();
+    const input = document.getElementById('phone-input');
+    input.readOnly = false;
+    input.focus();
+    input.select();
+  }
+
+  function startSTKPush(e) {
+    e.stopPropagation();
+    const triggerContainer = document.getElementById('stk-trigger-container');
+    const progressCard = document.getElementById('stk-progress-card');
+    const circle = document.getElementById('progress-circle');
+    const countdown = document.getElementById('countdown-text');
+
+    triggerContainer.classList.add('hidden');
+    progressCard.classList.remove('hidden');
+    progressCard.classList.add('flex');
+
+    let seconds = 45;
+    const total = 45;
+    countdown.innerText = seconds + 's';
+
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      seconds--;
+      countdown.innerText = seconds + 's';
+      const offset = (seconds / total) * 100;
+      circle.setAttribute('stroke-dasharray', `${offset}, 100`);
+
+      if (seconds <= 0) {
+        clearInterval(countdownTimer);
+        countdown.innerText = 'Done';
+        alert('STK Push simulated successfully! Booking confirmed with Karina.');
+        cancelSTK();
+      }
+    }, 1000);
+  }
+
+  function cancelSTK(e) {
+    if (e) e.stopPropagation();
+    if (countdownTimer) clearInterval(countdownTimer);
+    document.getElementById('stk-trigger-container').classList.remove('hidden');
+    const progress = document.getElementById('stk-progress-card');
+    progress.classList.add('hidden');
+    progress.classList.remove('flex');
+  }
+
+  function resendSTK(e) {
+    if (e) e.stopPropagation();
+    startSTKPush(e);
+  }
+</script></main></body></html>
