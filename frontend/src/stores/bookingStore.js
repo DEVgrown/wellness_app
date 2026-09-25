@@ -10,6 +10,7 @@ const state = reactive({
   },
   draftBooking: {
     serviceId: null,
+    slotId: null,
     serviceTitle: '1:1 Pilates Reformer',
     date: '2024-10-26',
     dateDisplay: 'Saturday, 26 Oct 2024',
@@ -64,10 +65,13 @@ export const useBookingStore = () => {
     }
   }
 
-  function setDraftSchedule(date, dateDisplay, timeSlot) {
+  function setDraftSchedule(date, dateDisplay, timeSlot, slotId = null) {
     state.draftBooking.date = date;
     state.draftBooking.dateDisplay = dateDisplay;
     state.draftBooking.timeSlot = timeSlot;
+    if (slotId) {
+      state.draftBooking.slotId = slotId;
+    }
   }
 
   function togglePack() {

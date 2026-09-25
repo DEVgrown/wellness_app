@@ -75,9 +75,20 @@
               </div>
 
               <!-- Time Slot Categories -->
-              <div class="space-y-6">
+              <div v-if="isLoadingSlots" class="py-8 text-center text-on-surface-variant dark:text-slate-400">
+                <span class="material-symbols-outlined animate-spin text-2xl text-secondary">progress_activity</span>
+                <p class="text-xs mt-2">Checking studio availability...</p>
+              </div>
+
+              <div v-else-if="morningSlots.length === 0 && afternoonSlots.length === 0" class="py-8 text-center text-on-surface-variant dark:text-slate-400">
+                <span class="material-symbols-outlined text-3xl text-secondary">event_busy</span>
+                <p class="text-sm font-semibold mt-2">No slots available for {{ formatSelectedDate(selectedDate) }}</p>
+                <p class="text-xs opacity-80 mt-1">Please select another date on the calendar above.</p>
+              </div>
+
+              <div v-else class="space-y-6">
                 <!-- Morning Slots -->
-                <div>
+                <div v-if="morningSlots.length > 0">
                   <h4 class="font-label-sm text-xs uppercase tracking-wider text-on-surface-variant dark:text-slate-400 font-bold mb-3 flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-sm text-secondary">wb_sunny</span>
                     Morning Calm (07:30 – 11:30 AM)
@@ -85,35 +96,51 @@
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <button 
                       v-for="slot in morningSlots" 
-                      :key="slot.time"
-                      @click="selectedTimeSlot = slot.time"
+                      :key="slot.id || slot.time"
+                      @click="selectSlot(slot)"
                       type="button"
-                      :class="selectedTimeSlot === slot.time ? 'bg-primary-container text-white dark:bg-sky-500 dark:text-slate-950 font-bold shadow-sm' : 'bg-surface dark:bg-slate-800 text-on-surface dark:text-slate-200 border border-outline-variant/30 dark:border-slate-700 hover:border-secondary'"
-                      class="py-3 px-3.5 rounded-2xl flex flex-col items-center justify-center transition-all"
+                      :disabled="slot.is_full || slot.spots <= 0"
+                      :class="[
+                        slot.is_full || slot.spots <= 0 
+                          ? 'opacity-40 cursor-not-allowed bg-surface-container-low dark:bg-slate-800 text-on-surface-variant border-outline-variant/20' 
+                          : selectedSlotId === slot.id || selectedTimeSlot === slot.time
+                            ? 'bg-primary-container text-white dark:bg-sky-500 dark:text-slate-950 font-bold shadow-sm' 
+                            : 'bg-surface dark:bg-slate-800 text-on-surface dark:text-slate-200 border border-outline-variant/30 dark:border-slate-700 hover:border-secondary'
+                      ]"
+                      class="py-3 px-3.5 rounded-2xl flex flex-col items-center justify-center transition-all border"
                     >
                       <span class="font-label-md text-sm font-semibold">{{ slot.time }}</span>
-                      <span class="text-[10px] opacity-80 mt-0.5">{{ slot.spots }} spots left</span>
+                      <span v-if="slot.is_full || slot.spots <= 0" class="text-[10px] text-error font-semibold mt-0.5">FULL</span>
+                      <span v-else class="text-[10px] opacity-80 mt-0.5">{{ slot.spots }} spot{{ slot.spots === 1 ? '' : 's' }} left</span>
                     </button>
                   </div>
                 </div>
 
                 <!-- Afternoon Slots -->
-                <div>
+                <div v-if="afternoonSlots.length > 0">
                   <h4 class="font-label-sm text-xs uppercase tracking-wider text-on-surface-variant dark:text-slate-400 font-bold mb-3 flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-sm text-secondary">wb_twilight</span>
-                    Afternoon Focus (01:00 – 05:00 PM)
+                    Afternoon Focus (01:00 – 06:00 PM)
                   </h4>
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <button 
                       v-for="slot in afternoonSlots" 
-                      :key="slot.time"
-                      @click="selectedTimeSlot = slot.time"
+                      :key="slot.id || slot.time"
+                      @click="selectSlot(slot)"
                       type="button"
-                      :class="selectedTimeSlot === slot.time ? 'bg-primary-container text-white dark:bg-sky-500 dark:text-slate-950 font-bold shadow-sm' : 'bg-surface dark:bg-slate-800 text-on-surface dark:text-slate-200 border border-outline-variant/30 dark:border-slate-700 hover:border-secondary'"
-                      class="py-3 px-3.5 rounded-2xl flex flex-col items-center justify-center transition-all"
+                      :disabled="slot.is_full || slot.spots <= 0"
+                      :class="[
+                        slot.is_full || slot.spots <= 0 
+                          ? 'opacity-40 cursor-not-allowed bg-surface-container-low dark:bg-slate-800 text-on-surface-variant border-outline-variant/20' 
+                          : selectedSlotId === slot.id || selectedTimeSlot === slot.time
+                            ? 'bg-primary-container text-white dark:bg-sky-500 dark:text-slate-950 font-bold shadow-sm' 
+                            : 'bg-surface dark:bg-slate-800 text-on-surface dark:text-slate-200 border border-outline-variant/30 dark:border-slate-700 hover:border-secondary'
+                      ]"
+                      class="py-3 px-3.5 rounded-2xl flex flex-col items-center justify-center transition-all border"
                     >
                       <span class="font-label-md text-sm font-semibold">{{ slot.time }}</span>
-                      <span class="text-[10px] opacity-80 mt-0.5">{{ slot.spots }} spots left</span>
+                      <span v-if="slot.is_full || slot.spots <= 0" class="text-[10px] text-error font-semibold mt-0.5">FULL</span>
+                      <span v-else class="text-[10px] opacity-80 mt-0.5">{{ slot.spots }} spot{{ slot.spots === 1 ? '' : 's' }} left</span>
                     </button>
                   </div>
                 </div>
@@ -218,12 +245,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppNavbar from '@/components/AppNavbar.vue';
 import AppBottomNav from '@/components/AppBottomNav.vue';
 import { useBookingStore } from '@/stores/bookingStore';
-import { getServices } from '@/services/api';
+import { getServices, getTimeSlots } from '@/services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -231,27 +258,93 @@ const bookingStore = useBookingStore();
 
 const selectedDate = ref(new Date().toISOString().split('T')[0]);
 const selectedTimeSlot = ref('09:30 AM');
+const selectedSlotId = ref(null);
 const isPackApplied = ref(false);
+const isLoadingSlots = ref(false);
+const liveSlots = ref([]);
 
 const activeService = ref({
+  id: null,
   title: '1:1 Pilates Reformer & Alignment',
-  slug: 'reformer',
-  price_kes: 6500,
-  price_eur: 75,
+  slug: 'reformer-pilates',
+  price_kes: 3500,
+  price_eur: 40,
   image_url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80'
 });
 
-const morningSlots = [
-  { time: '08:00 AM', spots: 2 },
-  { time: '09:30 AM', spots: 1 },
-  { time: '11:00 AM', spots: 3 }
-];
+const morningSlots = computed(() => {
+  return liveSlots.value
+    .filter(s => {
+      const p = (s.period || '').toLowerCase();
+      const t = (s.start_time || '');
+      return p === 'morning' || t.includes('AM') || t.startsWith('07') || t.startsWith('08') || t.startsWith('09') || t.startsWith('10') || t.startsWith('11');
+    })
+    .map(s => ({
+      id: s.id,
+      time: s.start_time,
+      spots: s.spots_left,
+      is_full: s.is_full || s.spots_left <= 0,
+      banner_image_url: s.banner_image_url
+    }));
+});
 
-const afternoonSlots = [
-  { time: '01:30 PM', spots: 2 },
-  { time: '03:00 PM', spots: 2 },
-  { time: '04:30 PM', spots: 1 }
-];
+const afternoonSlots = computed(() => {
+  return liveSlots.value
+    .filter(s => {
+      const p = (s.period || '').toLowerCase();
+      const t = (s.start_time || '');
+      return p !== 'morning' && !t.includes('AM') && !t.startsWith('07') && !t.startsWith('08') && !t.startsWith('09') && !t.startsWith('10') && !t.startsWith('11');
+    })
+    .map(s => ({
+      id: s.id,
+      time: s.start_time,
+      spots: s.spots_left,
+      is_full: s.is_full || s.spots_left <= 0,
+      banner_image_url: s.banner_image_url
+    }));
+});
+
+async function loadSlots() {
+  if (!activeService.value?.id) return;
+  isLoadingSlots.value = true;
+  try {
+    const data = await getTimeSlots(activeService.value.id, selectedDate.value);
+    liveSlots.value = Array.isArray(data) ? data : [];
+
+    // Auto-select first available slot if current selected is invalid
+    const allAvailable = [...morningSlots.value, ...afternoonSlots.value].filter(s => !s.is_full && s.spots > 0);
+    if (allAvailable.length > 0) {
+      const matchingCurrent = allAvailable.find(s => s.id === selectedSlotId.value);
+      if (matchingCurrent) {
+        selectedTimeSlot.value = matchingCurrent.time;
+      } else {
+        selectedSlotId.value = allAvailable[0].id;
+        selectedTimeSlot.value = allAvailable[0].time;
+      }
+    } else {
+      selectedSlotId.value = null;
+    }
+  } catch (err) {
+    console.error('Failed to load live time slots:', err);
+    liveSlots.value = [];
+  } finally {
+    isLoadingSlots.value = false;
+  }
+}
+
+function selectSlot(slot) {
+  if (slot.is_full || slot.spots <= 0) return;
+  selectedSlotId.value = slot.id;
+  selectedTimeSlot.value = slot.time;
+}
+
+watch(() => selectedDate.value, () => {
+  loadSlots();
+});
+
+watch(() => activeService.value?.id, () => {
+  loadSlots();
+});
 
 const quickDays = computed(() => {
   const days = [];
@@ -269,7 +362,7 @@ const quickDays = computed(() => {
 });
 
 const displayPrice = computed(() => {
-  const base = bookingStore.currency.value === 'KES' ? (activeService.value.price_kes || 6500) : (activeService.value.price_eur || 75);
+  const base = bookingStore.currency.value === 'KES' ? (activeService.value.price_kes || 3500) : (activeService.value.price_eur || 40);
   if (isPackApplied.value) {
     const total = Math.round(base * 5 * 0.85);
     return bookingStore.currency.value === 'KES' ? `KES ${total.toLocaleString()}` : `€${total}`;
@@ -285,11 +378,15 @@ onMounted(async () => {
       if (paramId) {
         const found = list.find(s => s.id === paramId || s.slug === paramId);
         if (found) activeService.value = found;
+        else activeService.value = list[0];
+      } else {
+        activeService.value = list[0];
       }
     }
   } catch (e) {
-    console.warn('Using default service:', e);
+    console.warn('Using default service catalog:', e);
   }
+  await loadSlots();
 });
 
 function formatSelectedDate(dStr) {
@@ -300,7 +397,7 @@ function formatSelectedDate(dStr) {
 
 function proceedToCheckout() {
   bookingStore.setDraftService(activeService.value);
-  bookingStore.setDraftSchedule(selectedDate.value, formatSelectedDate(selectedDate.value), selectedTimeSlot.value);
+  bookingStore.setDraftSchedule(selectedDate.value, formatSelectedDate(selectedDate.value), selectedTimeSlot.value, selectedSlotId.value);
   router.push('/checkout');
 }
 </script>

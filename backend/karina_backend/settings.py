@@ -64,14 +64,36 @@ TEMPLATES = [
     },
 ]
 
+import dj_database_url
+
 WSGI_APPLICATION = 'karina_backend.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Unified PostgreSQL Engine (Phase 2)
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# Custom User Model
+AUTH_USER_MODEL = 'booking_api.User'
+
+# Media Storage Configuration for Avatars, Service Photos & Session Banners
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10 MB for high-resolution studio photography
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760
 
 AUTH_PASSWORD_VALIDATORS = [
     {

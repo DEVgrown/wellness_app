@@ -302,4 +302,89 @@ export async function issueCustomerPass(customerId, passData) {
   return res.json();
 }
 
+// Media Upload APIs (Phase 2)
+export async function uploadServiceImage(serviceId, file) {
+  const token = localStorage.getItem('karina_auth_token');
+  const formData = new FormData();
+  formData.append('image', file);
+  const headers = {};
+  if (token) headers['Authorization'] = `Token ${token}`;
+
+  const res = await fetch(`${API_BASE}/admin/services/${serviceId}/image/`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to upload service photo');
+  }
+  return res.json();
+}
+
+export async function deleteServiceImage(serviceId) {
+  const res = await fetch(`${API_BASE}/admin/services/${serviceId}/image/`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to remove service photo');
+  return res.json();
+}
+
+export async function uploadSessionBanner(slotId, file) {
+  const token = localStorage.getItem('karina_auth_token');
+  const formData = new FormData();
+  formData.append('banner_image', file);
+  const headers = {};
+  if (token) headers['Authorization'] = `Token ${token}`;
+
+  const res = await fetch(`${API_BASE}/admin/slots/${slotId}/banner/`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to upload session banner');
+  }
+  return res.json();
+}
+
+export async function deleteSessionBanner(slotId) {
+  const res = await fetch(`${API_BASE}/admin/slots/${slotId}/banner/`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to remove session banner');
+  return res.json();
+}
+
+export async function uploadProfileAvatar(file) {
+  const token = localStorage.getItem('karina_auth_token');
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const headers = {};
+  if (token) headers['Authorization'] = `Token ${token}`;
+
+  const res = await fetch(`${API_BASE}/auth/profile/avatar/`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to upload avatar');
+  }
+  return res.json();
+}
+
+export async function deleteProfileAvatar() {
+  const res = await fetch(`${API_BASE}/auth/profile/avatar/`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to remove profile picture');
+  return res.json();
+}
+
 

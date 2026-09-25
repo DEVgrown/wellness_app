@@ -299,6 +299,7 @@ async function handlePaymentSubmit() {
   try {
     const bookingPayload = {
       service_id: draft.value.serviceId,
+      slot_id: draft.value.slotId,
       service_title: draft.value.serviceTitle || '1:1 Pilates Reformer',
       user_name: attendee.name,
       user_email: attendee.email,

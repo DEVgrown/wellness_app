@@ -292,6 +292,60 @@
             </div>
 
             <div>
+              <label class="block font-label-sm text-xs font-semibold mb-1 text-on-surface dark:text-slate-300">Session Theme / Workshop Title (Optional)</label>
+              <input v-model="singleForm.session_theme" type="text" placeholder="e.g. Full Moon Sound Immersion or Pelvic Floor Reset" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-primary-container/20 text-on-surface dark:text-white" />
+            </div>
+
+            <!-- Workshop / Masterclass Banner Upload -->
+            <div class="space-y-2">
+              <label class="block font-label-sm text-xs font-semibold text-on-surface dark:text-slate-300">
+                Special Workshop / Session Promotional Banner (Optional, up to 10MB)
+              </label>
+              
+              <div class="flex items-start gap-4">
+                <div class="relative w-20 h-20 rounded-2xl overflow-hidden border border-outline-variant/30 dark:border-slate-700 bg-surface-container-low dark:bg-slate-800 shrink-0 flex items-center justify-center">
+                  <img 
+                    v-if="bannerPreviewUrl || singleForm.banner_url" 
+                    :src="bannerPreviewUrl || singleForm.banner_url" 
+                    alt="Banner Preview" 
+                    class="w-full h-full object-cover"
+                  />
+                  <div v-else class="text-center p-1 text-on-surface-variant dark:text-slate-500">
+                    <span class="material-symbols-outlined text-xl">wallpaper</span>
+                    <p class="text-[8px]">No Banner</p>
+                  </div>
+                </div>
+
+                <div class="flex-1 space-y-1.5">
+                  <div 
+                    @click="$refs.bannerFileInput.click()"
+                    class="border-2 border-dashed border-outline-variant/40 dark:border-slate-700 hover:border-secondary rounded-2xl p-2.5 text-center cursor-pointer transition-colors bg-surface-container-low/40 dark:bg-slate-800/40"
+                  >
+                    <input 
+                      ref="bannerFileInput" 
+                      type="file" 
+                      accept=".jpg,.jpeg,.png,.webp" 
+                      @change="handleBannerSelect" 
+                      class="hidden" 
+                    />
+                    <span class="material-symbols-outlined text-lg text-secondary">add_photo_alternate</span>
+                    <p class="text-xs font-medium text-on-surface dark:text-slate-200">
+                      {{ selectedBannerFile ? selectedBannerFile.name : 'Upload custom session poster' }}
+                    </p>
+                  </div>
+                  <button 
+                    v-if="selectedBannerFile || bannerPreviewUrl" 
+                    @click="clearBannerFile" 
+                    type="button" 
+                    class="text-[10px] text-error font-semibold hover:underline"
+                  >
+                    Clear selected banner
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div>
               <label class="block font-label-sm text-xs font-semibold mb-1 text-on-surface dark:text-slate-300">Location</label>
               <input v-model="singleForm.location_name" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-primary-container/20 text-on-surface dark:text-white" />
             </div>
@@ -429,7 +483,16 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { getAdminServices, getAdminSlots, createAdminSlot, updateAdminSlot, deleteAdminSlot, bulkGenerateAdminSlots } from '@/services/api';
+import { 
+  getAdminServices, 
+  getAdminSlots, 
+  createAdminSlot, 
+  updateAdminSlot, 
+  deleteAdminSlot, 
+  bulkGenerateAdminSlots,
+  uploadSessionBanner,
+  deleteSessionBanner 
+} from '@/services/api';
 
 const services = ref([]);
 const slots = ref([]);
@@ -438,6 +501,9 @@ const filterService = ref('all');
 const notice = ref('');
 const noticeType = ref('success');
 const submitting = ref(false);
+
+const selectedBannerFile = ref(null);
+const bannerPreviewUrl = ref(null);
 
 const showSingleModal = ref(false);
 const isEditing = ref(false);
@@ -449,7 +515,9 @@ const singleForm = reactive({
   period: 'morning',
   location_name: 'Karen Studio, Nairobi',
   spots_left: 4,
-  is_full: false
+  is_full: false,
+  session_theme: '',
+  banner_url: ''
 });
 
 const showBulkModal = ref(false);
@@ -501,17 +569,41 @@ async function loadSlots() {
   }
 }
 
+function handleBannerSelect(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Banner file size exceeds 10 MB limit.');
+    return;
+  }
+
+  selectedBannerFile.value = file;
+  bannerPreviewUrl.value = URL.createObjectURL(file);
+}
+
+function clearBannerFile() {
+  selectedBannerFile.value = null;
+  if (bannerPreviewUrl.value) {
+    URL.revokeObjectURL(bannerPreviewUrl.value);
+    bannerPreviewUrl.value = null;
+  }
+}
+
 function openSingleModal(item = null) {
+  clearBannerFile();
   if (item) {
     isEditing.value = true;
     editingId.value = item.id;
-    singleForm.service_id = item.service_id || '';
+    singleForm.service_id = item.service_id || item.service || '';
     singleForm.slot_date = item.slot_date;
     singleForm.start_time = item.start_time;
     singleForm.period = item.period;
     singleForm.location_name = item.location_name;
     singleForm.spots_left = item.spots_left;
     singleForm.is_full = !!item.is_full;
+    singleForm.session_theme = item.session_theme || '';
+    singleForm.banner_url = item.banner_url || item.banner_image_url || '';
   } else {
     isEditing.value = false;
     editingId.value = null;
@@ -524,6 +616,8 @@ function openSingleModal(item = null) {
     singleForm.location_name = 'Karen Studio, Nairobi';
     singleForm.spots_left = 4;
     singleForm.is_full = false;
+    singleForm.session_theme = '';
+    singleForm.banner_url = '';
   }
   showSingleModal.value = true;
 }
@@ -531,15 +625,23 @@ function openSingleModal(item = null) {
 async function submitSingleSlot() {
   submitting.value = true;
   try {
+    let savedSlot = null;
     if (isEditing.value) {
-      await updateAdminSlot(editingId.value, singleForm);
+      savedSlot = await updateAdminSlot(editingId.value, singleForm);
       notice.value = 'Session slot updated successfully.';
     } else {
-      await createAdminSlot(singleForm);
+      savedSlot = await createAdminSlot(singleForm);
       notice.value = 'New session slot created.';
     }
+
+    // Upload banner image file if one was selected
+    if (selectedBannerFile.value && savedSlot?.id) {
+      await uploadSessionBanner(savedSlot.id, selectedBannerFile.value);
+    }
+
     noticeType.value = 'success';
     showSingleModal.value = false;
+    clearBannerFile();
     await loadSlots();
   } catch (err) {
     notice.value = err.message;
