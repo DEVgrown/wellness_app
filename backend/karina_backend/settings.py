@@ -6,9 +6,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-karina-wellness-studio-secret-key-1234')
-
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        import secrets
+        SECRET_KEY = secrets.token_urlsafe(50)
+    else:
+        raise ValueError("CRITICAL SECURITY ERROR: SECRET_KEY environment variable is missing in production!")
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 

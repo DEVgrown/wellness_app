@@ -51,12 +51,14 @@ const routes = [
   {
     path: '/checkout',
     name: 'checkout',
-    component: CheckoutView
+    component: CheckoutView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/bookings',
     name: 'bookings',
-    component: MyBookingsView
+    component: MyBookingsView,
+    meta: { requiresAuth: true }
   },
   
   // Dedicated Multi-Page Admin Portal
@@ -105,26 +107,30 @@ const router = createRouter({
   }
 });
 
-// Global Navigation Guard for Administrator Verification
+// Global Navigation Guard for Authentication & Administrator Verification
 router.beforeEach((to, from, next) => {
-  if (to.matched.some(record => record.meta.requiresAdmin)) {
-    const token = localStorage.getItem('karina_auth_token');
-    const userStr = localStorage.getItem('karina_auth_user');
-    let user = null;
-    try {
-      user = userStr ? JSON.parse(userStr) : null;
-    } catch (e) {
-      user = null;
-    }
-    const isStaff = Boolean(user && (
-      user.is_staff || 
-      user.is_superuser || 
-      user.role === 'admin' || 
-      user.username === 'admin' || 
-      (user.email && user.email.toLowerCase().includes('admin'))
-    ));
+  const token = localStorage.getItem('karina_auth_token');
+  const userStr = localStorage.getItem('karina_auth_user');
+  let user = null;
+  try {
+    user = userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    user = null;
+  }
+  const isAuthenticated = Boolean(token && user);
 
-    if (!token || !user) {
+  // Check routes requiring general client authentication
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isAuthenticated) {
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+  }
+
+  // Check routes requiring administrative privileges (SEC-003: strict boolean check)
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    const isStaff = Boolean(user && (user.is_staff === true || user.is_superuser === true));
+
+    if (!isAuthenticated) {
       return next({ path: '/login', query: { redirect: to.fullPath } });
     }
     if (!isStaff) {

@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from .permissions import IsVerifiedStudioAdmin
 from rest_framework.authtoken.models import Token
 
 from .supabase_client import SupabaseService, get_supabase
@@ -280,7 +281,7 @@ class UserProfileView(APIView):
 
 class AdminOverviewView(APIView):
     """KPI Metrics and live analytics for Admin Dashboard."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
         metrics = SupabaseService.get_admin_metrics()
@@ -293,7 +294,7 @@ class AdminOverviewView(APIView):
 
 class AdminServiceListCreateView(APIView):
     """Admin endpoint to list all services and create new offerings."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
         services = SupabaseService.get_services(category='all', location='all')
@@ -333,7 +334,7 @@ class AdminServiceListCreateView(APIView):
 
 class AdminServiceDetailView(APIView):
     """Admin endpoint to retrieve, update, or remove a service."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request, pk):
         service = SupabaseService.get_service_by_id(pk)
@@ -360,7 +361,7 @@ class AdminServiceDetailView(APIView):
 
 class AdminTimeSlotListCreateView(APIView):
     """Admin endpoint to query time slots across services and dates or create a slot."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
         service_id = request.query_params.get('service_id')
@@ -399,7 +400,7 @@ class AdminTimeSlotListCreateView(APIView):
 
 class AdminTimeSlotBulkCreateView(APIView):
     """Admin endpoint to bulk-generate recurring weekly slots across a date range."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def post(self, request):
         serializer = BulkSlotGenerateSerializer(data=request.data)
@@ -446,7 +447,7 @@ class AdminTimeSlotBulkCreateView(APIView):
 
 class AdminTimeSlotDetailView(APIView):
     """Admin endpoint to edit or delete a time slot."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def patch(self, request, pk):
         serializer = TimeSlotCreateUpdateSerializer(data=request.data, partial=True)
@@ -472,7 +473,7 @@ class AdminTimeSlotDetailView(APIView):
 
 class AdminBookingListView(APIView):
     """Admin endpoint to view and filter all attendee bookings."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
         status_filter = request.query_params.get('status', 'all')
@@ -491,7 +492,7 @@ class AdminBookingListView(APIView):
 
 class AdminBookingDetailView(APIView):
     """Admin endpoint to modify booking status, reschedule, add coach notes, or delete."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def patch(self, request, pk):
         serializer = AdminBookingUpdateSerializer(data=request.data, partial=True)
@@ -519,7 +520,7 @@ class AdminBookingDetailView(APIView):
 
 class AdminCustomerListView(APIView):
     """Admin endpoint to retrieve all registered customers with aggregate stats or manually onboard new clients."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
         search_query = request.query_params.get('search', '').lower().strip()
@@ -662,7 +663,7 @@ class AdminCustomerListView(APIView):
 
 class AdminCustomerDetailView(APIView):
     """Admin endpoint to view deep details, all bookings, packages, or update customer account."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request, pk):
         try:
@@ -718,7 +719,7 @@ class AdminCustomerDetailView(APIView):
 
 class AdminCustomerPassView(APIView):
     """Admin endpoint to issue or credit passes to a customer."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def post(self, request, pk):
         try:

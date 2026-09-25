@@ -216,32 +216,7 @@
         </button>
       </form>
 
-      <!-- Quick Demo Account helper -->
-      <!-- Quick Demo Account Fillers -->
-      <div class="mt-6 pt-5 border-t border-outline-variant/30 dark:border-slate-800 text-center">
-        <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mb-2">
-          Test Quick Sign In:
-        </p>
-        <div class="flex items-center justify-center gap-2 flex-wrap">
-          <button 
-            @click="fillClientAccount" 
-            type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low dark:bg-slate-800 text-secondary hover:text-primary-container dark:hover:text-white font-label-sm text-xs transition-all hover:bg-surface-container"
-          >
-            <span class="material-symbols-outlined text-xs text-emerald-600">person</span>
-            <span>Client (Sarah)</span>
-          </button>
 
-          <button 
-            @click="fillAdminAccount" 
-            type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-container/10 dark:bg-sky-950/60 text-primary-container dark:text-sky-300 font-label-sm text-xs font-semibold hover:bg-primary-container/20 transition-all border border-primary-container/20 dark:border-sky-800"
-          >
-            <span class="material-symbols-outlined text-xs text-amber-500">admin_panel_settings</span>
-            <span>Studio Admin</span>
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Simple Footer -->
@@ -303,20 +278,6 @@ function showToast(msg) {
   bookingStore.showToast(msg, 'info');
 }
 
-function fillClientAccount() {
-  isSignUp.value = false;
-  loginForm.username = 'sarah';
-  loginForm.password = 'SecretPassword123!';
-  errorMessage.value = '';
-}
-
-function fillAdminAccount() {
-  isSignUp.value = false;
-  loginForm.username = 'admin';
-  loginForm.password = 'admin123';
-  errorMessage.value = '';
-}
-
 async function handleLogin() {
   loading.value = true;
   errorMessage.value = '';
@@ -324,13 +285,7 @@ async function handleLogin() {
   try {
     const data = await authStore.login(loginForm.username, loginForm.password);
     const user = data.user || {};
-    const isAdmin = Boolean(
-      user.is_staff || 
-      user.is_superuser || 
-      user.role === 'admin' || 
-      user.username === 'admin' ||
-      (user.email && user.email.toLowerCase().includes('admin'))
-    );
+    const isAdmin = Boolean(user && (user.is_staff === true || user.is_superuser === true));
     const roleLabel = isAdmin ? 'Studio Administrator' : 'Client';
     
     successMessage.value = `Welcome back, ${user.name || user.username}! Verified as ${roleLabel}.`;

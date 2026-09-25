@@ -2,9 +2,10 @@ services:
   redis:
     image: redis:7-alpine
     container_name: karina_redis
-    ports:
-      - "6379:6379"
+    command: redis-server --requirepass "${REDIS_PASSWORD}"
     restart: always
+    networks:
+      - karina_internal_network
 
   backend:
     build:
@@ -14,20 +15,23 @@ services:
     container_name: karina_backend
     restart: always
     environment:
-      - DEBUG=True
-      - SECRET_KEY=django-insecure-karina-wellness-booking-secret-key-2024
-      - ALLOWED_HOSTS=*
-      - CORS_ALLOW_ALL_ORIGINS=True
-      - SUPABASE_URL=https://dbtsjpwwyaxtbruwfafd.supabase.co
-      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHNqcHd3eWF4dGJydXdmYWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxODk0MjUsImV4cCI6MjEwNTc2NTQyNX0.3L_wS9BMi-Q26F2VJNxA_pGPoWfk8AQHKmA63KPk-8w
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,nginx}
+      - CORS_ALLOW_ALL_ORIGINS=${CORS_ALLOW_ALL_ORIGINS:-False}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     depends_on:
       - redis
+    networks:
+      - karina_internal_network
 
   celery_worker:
     image: karina_backend:latest
@@ -37,27 +41,33 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      - DEBUG=True
-      - SECRET_KEY=django-insecure-karina-wellness-booking-secret-key-2024
-      - ALLOWED_HOSTS=*
-      - SUPABASE_URL=https://dbtsjpwwyaxtbruwfafd.supabase.co
-      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHNqcHd3eWF4dGJydXdmYWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxODk0MjUsImV4cCI6MjEwNTc2NTQyNX0.3L_wS9BMi-Q26F2VJNxA_pGPoWfk8AQHKmA63KPk-8w
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,nginx}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       - redis
       - backend
+    networks:
+      - karina_internal_network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: karina_frontend:latest
     container_name: karina_frontend
     restart: always
     ports:
       - "5173:80"
     volumes:
       - ./frontend/dist:/usr/share/nginx/html:ro
+    networks:
+      - karina_internal_network
 
   nginx:
     image: nginx:alpine
@@ -70,3 +80,9 @@ services:
     depends_on:
       - backend
       - frontend
+    networks:
+      - karina_internal_network
+
+networks:
+  karina_internal_network:
+    driver: bridge
