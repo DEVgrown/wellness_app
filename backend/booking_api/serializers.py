@@ -89,14 +89,92 @@ from django.contrib.auth import authenticate
 
 class UserProfileSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'name', 'role', 'is_staff', 'is_superuser', 'is_active', 'date_joined']
 
     def get_name(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         return full_name if full_name else obj.username
+
+    def get_role(self, obj):
+        return 'admin' if (obj.is_staff or obj.is_superuser) else 'client'
+
+class CustomerUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False)
+    phone = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    is_active = serializers.BooleanField(required=False)
+    is_staff = serializers.BooleanField(required=False)
+
+class CustomerCreateSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=6, default='Welcome123!')
+    name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    phone = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    is_staff = serializers.BooleanField(default=False)
+
+    def validate_username(self, value):
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("A user with that username already exists.")
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("A user with that email already exists.")
+        return value
+
+class IssuePackagePassSerializer(serializers.Serializer):
+    package_name = serializers.CharField(max_length=255, default='Complimentary Studio Pass')
+    total_sessions = serializers.IntegerField(default=1, min_value=1)
+    valid_until = serializers.CharField(max_length=100, default='31 Dec 2026')
+
+
+class ServiceCreateUpdateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255)
+    slug = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    category = serializers.CharField(max_length=50)
+    duration_minutes = serializers.IntegerField(default=60)
+    location_type = serializers.CharField(max_length=100, default='all nairobi')
+    location_display = serializers.CharField(max_length=255, default='Karen Studio Sanctuary, Nairobi')
+    price_kes = serializers.IntegerField(default=3500)
+    price_eur = serializers.IntegerField(default=40)
+    image_url = serializers.CharField(allow_blank=True, required=False, default='')
+    description = serializers.CharField()
+    badge = serializers.CharField(allow_blank=True, required=False, default='')
+    capacity = serializers.CharField(allow_blank=True, required=False, default='Small Group (4–8)')
+
+class TimeSlotCreateUpdateSerializer(serializers.Serializer):
+    service_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    slot_date = serializers.DateField()
+    start_time = serializers.CharField(max_length=20)
+    period = serializers.CharField(max_length=20, default='morning')
+    location_name = serializers.CharField(max_length=255, default='Karen Studio, Nairobi')
+    spots_left = serializers.IntegerField(default=4)
+    is_full = serializers.BooleanField(default=False)
+    waitlist_available = serializers.BooleanField(default=False)
+
+class BulkSlotGenerateSerializer(serializers.Serializer):
+    service_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+    days_of_week = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=6), help_text="0=Monday, 6=Sunday")
+    times = serializers.ListField(child=serializers.DictField())
+    location_name = serializers.CharField(max_length=255, default='Karen Studio, Nairobi')
+    spots_left = serializers.IntegerField(default=4)
+
+class AdminBookingUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=['confirmed', 'completed', 'cancelled'], required=False)
+    booking_date = serializers.DateField(required=False)
+    time_slot = serializers.CharField(max_length=50, required=False)
+    notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    coach_notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    location_name = serializers.CharField(required=False, allow_blank=True)
+
 
 class UserRegisterSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)

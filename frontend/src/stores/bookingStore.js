@@ -6,7 +6,7 @@ const state = reactive({
     name: 'Sarah',
     email: 'sarah@example.com',
     phone: '+254 712 345 678',
-    avatar: 'https://lh3.googleusercontent.com/aida/AEtjO1UwxvO7_3GTbgWd4EMPt4rt_w381oAezID3bV9-NdwIdn55FZ_9EuUxkek0b1g_CCD7OREkS7yHj5Cgb747yd7hji3o7wMsF5yMWX7Y-9WXeuNJSV87pRW9T6yotkdPzul6-kYjIysNWHJ6rcSRnoCnngzil7rsid2c6iewLxqYX2u5vPcQFLY7r3ZEkPxwmhnE8RfShmfVHjQTEbYJSi9MwKlsQzRFBydQI4ftgATXc7O0xLaTmJmS44Z2gA8121FAes4FrKhN'
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80'
   },
   draftBooking: {
     serviceId: null,

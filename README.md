@@ -120,6 +120,7 @@ wellness_app/
 │       ├── services/               # Axios / fetch API client service
 │       ├── stores/                 # State management (authStore, bookingStore, themeStore)
 │       └── views/                  # Primary screen views
+│           ├── AdminDashboardView.vue # Boutique Admin operations & session scheduler
 │           ├── AuthView.vue        # Login & Registration
 │           ├── BookSessionView.vue # Date & Time slot picker
 │           ├── CheckoutView.vue    # M-Pesa STK Push payment flow
@@ -256,6 +257,19 @@ The frontend will start at [http://localhost:5173](http://localhost:5173) and pr
 | `POST` | `/api/auth/login/` | Authenticate user and receive auth token |
 | `POST` | `/api/auth/logout/` | Invalidate current user session token |
 | `GET` | `/api/auth/me/` | Retrieve authenticated user profile |
+| `GET` | `/api/admin/overview/` | Admin KPI metrics & recent activity |
+| `GET` / `POST` | `/api/admin/services/` | List and create offerings with prices, duration, and capacity |
+| `PATCH` / `DELETE`| `/api/admin/services/<id>/` | Update or remove service offerings and cascade slot cleanup |
+| `GET` / `POST` | `/api/admin/slots/` | Query or create individual session time slots |
+| `POST` | `/api/admin/slots/bulk-generate/`| Bulk-generate recurring weekly slots across date ranges |
+| `PATCH` / `DELETE`| `/api/admin/slots/<id>/` | Edit capacity, mark full, or delete a session slot |
+| `GET` | `/api/admin/bookings/` | Retrieve all client bookings across studio roster with search |
+| `PATCH` / `DELETE`| `/api/admin/bookings/<id>/` | Modify booking status, reschedule, add coach notes, or delete |
+| `GET` / `POST` | `/api/admin/customers/` | List all registered clients with booking & spend stats, or onboard new client |
+| `GET` / `PATCH` | `/api/admin/customers/<id>/` | Retrieve customer profile with all bookings & packages, or edit user data |
+| `POST` | `/api/admin/customers/<id>/passes/`| Issue or credit session package passes to a client account |
+
+
 
 ---
 

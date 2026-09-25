@@ -2,40 +2,40 @@
   <div class="bg-surface dark:bg-slate-950 text-on-surface dark:text-slate-100 flex flex-col min-h-screen transition-colors duration-200">
     <AppNavbar />
 
-    <main class="flex-1 flex flex-col relative w-full pt-20 pb-24 md:pb-12 bg-surface dark:bg-slate-950">
-      <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+    <main class="flex-1 flex flex-col relative w-full pt-16 sm:pt-20 pb-24 md:pb-12 bg-surface dark:bg-slate-950 max-w-full">
+      <div class="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-5 sm:py-6 overflow-hidden">
         <!-- Welcoming Greeting Header Banner -->
-        <section class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-lowest dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-outline-variant/30 dark:border-slate-800">
-          <div class="flex items-center gap-4">
+        <section class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-container-lowest dark:bg-slate-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-outline-variant/30 dark:border-slate-800 overflow-hidden">
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0">
             <img 
               :src="authStore.user.value.avatar || user.avatar" 
               alt="Avatar" 
-              class="w-16 h-16 rounded-full object-cover shadow-sm ring-4 ring-secondary/20 shrink-0"
+              class="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover shadow-sm ring-4 ring-secondary/20 shrink-0" 
             />
-            <div>
-              <div class="flex items-center gap-2">
-                <h1 class="font-headline-lg text-2xl sm:text-3xl font-bold text-primary-container dark:text-white tracking-tight">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 sm:gap-2">
+                <h1 class="font-headline-lg text-lg sm:text-2xl lg:text-3xl font-bold text-primary-container dark:text-white tracking-tight truncate">
                   Welcome back, {{ authStore.user.value.name || user.name }}
                 </h1>
-                <span class="text-2xl">🌿</span>
+                <span class="text-xl sm:text-2xl shrink-0">🌿</span>
               </div>
-              <p class="font-body-md text-body-md text-on-surface-variant dark:text-slate-400 mt-0.5">
+              <p class="font-body-md text-xs sm:text-body-md text-on-surface-variant dark:text-slate-400 mt-0.5 line-clamp-2">
                 "Honor your breath, nourish your energy, and move with intention today."
               </p>
             </div>
           </div>
 
-          <div class="flex items-center gap-2.5 shrink-0">
+          <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <router-link 
               to="/book" 
-              class="inline-flex items-center gap-2 bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md px-5 py-2.5 rounded-full shadow-sm font-semibold transition-all active:scale-[0.98]"
+              class="inline-flex items-center gap-1.5 sm:gap-2 bg-primary-container hover:bg-primary text-on-primary font-label-md text-xs sm:text-label-md px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-sm font-semibold transition-all active:scale-[0.98]"
             >
-              <span class="material-symbols-outlined text-lg">calendar_add_on</span>
+              <span class="material-symbols-outlined text-base sm:text-lg">calendar_add_on</span>
               <span>Book Session</span>
             </router-link>
             <router-link 
               to="/services" 
-              class="inline-flex items-center gap-2 bg-surface-container-low dark:bg-slate-800 text-primary-container dark:text-white hover:bg-surface-container font-label-md text-label-md px-4 py-2.5 rounded-full transition-all border border-outline-variant/30 dark:border-slate-700 font-semibold"
+              class="inline-flex items-center gap-1.5 sm:gap-2 bg-surface-container-low dark:bg-slate-800 text-primary-container dark:text-white hover:bg-surface-container font-label-md text-xs sm:text-label-md px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full transition-all border border-outline-variant/30 dark:border-slate-700 font-semibold"
             >
               <span>Explore</span>
             </router-link>
@@ -43,30 +43,30 @@
         </section>
 
         <!-- 2-Column Responsive Desktop Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
           <!-- LEFT COLUMN: Upcoming Session & Somatic Movement (7 Cols) -->
-          <div class="lg:col-span-7 flex flex-col gap-6">
+          <div class="lg:col-span-7 flex flex-col gap-6 min-w-0">
             <!-- Next Upcoming Session Card -->
-            <div class="relative bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-md border border-outline-variant/30 dark:border-slate-800 overflow-hidden">
+            <div class="relative bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-5 sm:p-8 shadow-md border border-outline-variant/30 dark:border-slate-800 overflow-hidden">
               <div class="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-secondary-fixed/40 dark:bg-sky-900/20 blur-3xl pointer-events-none"></div>
 
-              <div class="flex items-start justify-between relative z-10 mb-4">
-                <div>
-                  <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/40 dark:bg-sky-950/60 text-primary-container dark:text-sky-300 font-label-sm text-label-sm font-semibold mb-2">
-                    <span class="material-symbols-outlined text-sm text-secondary">verified</span>
+              <div class="flex flex-col xs:flex-row items-start xs:items-center justify-between relative z-10 mb-4 gap-3">
+                <div class="min-w-0">
+                  <div class="inline-flex items-center gap-1.5 px-3 py-0.5 sm:py-1 rounded-full bg-secondary-container/40 dark:bg-sky-950/60 text-primary-container dark:text-sky-300 font-label-sm text-[11px] sm:text-label-sm font-semibold mb-1 sm:mb-2">
+                    <span class="material-symbols-outlined text-xs sm:text-sm text-secondary">verified</span>
                     <span>Confirmed Session</span>
                   </div>
-                  <h2 class="font-headline-lg text-2xl font-bold text-primary-container dark:text-white">
+                  <h2 class="font-headline-lg text-lg sm:text-2xl font-bold text-primary-container dark:text-white break-words">
                     1:1 Pilates Reformer &amp; Alignment
                   </h2>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant dark:text-slate-400">
+                  <p class="font-body-sm text-xs sm:text-body-sm text-on-surface-variant dark:text-slate-400 mt-0.5">
                     With Lead Coach Karina • Tree Lane Studio Sanctuary
                   </p>
                 </div>
 
-                <div class="w-16 h-16 rounded-2xl bg-surface-container dark:bg-slate-800 flex flex-col items-center justify-center shrink-0 shadow-sm border border-outline-variant/20 dark:border-slate-700">
-                  <span class="font-eyebrow text-[10px] text-secondary uppercase font-bold tracking-wider">TOMORROW</span>
-                  <span class="font-headline-sm text-xl font-bold text-primary-container dark:text-white mt-0.5">09:30</span>
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-surface-container dark:bg-slate-800 flex flex-col items-center justify-center shrink-0 shadow-sm border border-outline-variant/20 dark:border-slate-700">
+                  <span class="font-eyebrow text-[9px] sm:text-[10px] text-secondary uppercase font-bold tracking-wider">TOMORROW</span>
+                  <span class="font-headline-sm text-lg sm:text-xl font-bold text-primary-container dark:text-white mt-0.5">09:30</span>
                 </div>
               </div>
 

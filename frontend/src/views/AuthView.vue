@@ -217,18 +217,30 @@
       </form>
 
       <!-- Quick Demo Account helper -->
+      <!-- Quick Demo Account Fillers -->
       <div class="mt-6 pt-5 border-t border-outline-variant/30 dark:border-slate-800 text-center">
-        <p class="font-body-sm text-body-sm text-on-surface-variant dark:text-slate-400 mb-2">
-          Want to test quickly without typing?
+        <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mb-2">
+          Test Quick Sign In:
         </p>
-        <button 
-          @click="fillDemoAccount" 
-          type="button"
-          class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-surface-container-low dark:bg-slate-800 text-secondary hover:text-primary-container dark:hover:text-white font-label-sm text-label-sm transition-all hover:bg-surface-container"
-        >
-          <span class="material-symbols-outlined text-sm">bolt</span>
-          <span>Fill Demo Credentials (Elena Rostova)</span>
-        </button>
+        <div class="flex items-center justify-center gap-2 flex-wrap">
+          <button 
+            @click="fillClientAccount" 
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low dark:bg-slate-800 text-secondary hover:text-primary-container dark:hover:text-white font-label-sm text-xs transition-all hover:bg-surface-container"
+          >
+            <span class="material-symbols-outlined text-xs text-emerald-600">person</span>
+            <span>Client (Sarah)</span>
+          </button>
+
+          <button 
+            @click="fillAdminAccount" 
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-container/10 dark:bg-sky-950/60 text-primary-container dark:text-sky-300 font-label-sm text-xs font-semibold hover:bg-primary-container/20 transition-all border border-primary-container/20 dark:border-sky-800"
+          >
+            <span class="material-symbols-outlined text-xs text-amber-500">admin_panel_settings</span>
+            <span>Studio Admin</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -291,10 +303,17 @@ function showToast(msg) {
   bookingStore.showToast(msg, 'info');
 }
 
-function fillDemoAccount() {
+function fillClientAccount() {
   isSignUp.value = false;
-  loginForm.username = 'elena_karina';
+  loginForm.username = 'sarah';
   loginForm.password = 'SecretPassword123!';
+  errorMessage.value = '';
+}
+
+function fillAdminAccount() {
+  isSignUp.value = false;
+  loginForm.username = 'admin';
+  loginForm.password = 'admin123';
   errorMessage.value = '';
 }
 
@@ -304,15 +323,35 @@ async function handleLogin() {
   successMessage.value = '';
   try {
     const data = await authStore.login(loginForm.username, loginForm.password);
-    successMessage.value = `Welcome back, ${data.user.name || data.user.username}! Redirecting...`;
+    const user = data.user || {};
+    const isAdmin = Boolean(
+      user.is_staff || 
+      user.is_superuser || 
+      user.role === 'admin' || 
+      user.username === 'admin' ||
+      (user.email && user.email.toLowerCase().includes('admin'))
+    );
+    const roleLabel = isAdmin ? 'Studio Administrator' : 'Client';
     
-    // Update booking store user
-    bookingStore.showToast(`Logged in as ${data.user.name || data.user.username}`, 'success');
+    successMessage.value = `Welcome back, ${user.name || user.username}! Verified as ${roleLabel}.`;
+    bookingStore.showToast(`Logged in as ${roleLabel}`, 'success');
+
+    let targetRoute = route.query.redirect;
+    if (isAdmin) {
+      // For admins, default to /admin/overview unless they came specifically with an /admin destination
+      if (!targetRoute || !targetRoute.startsWith('/admin')) {
+        targetRoute = '/admin/overview';
+      }
+    } else {
+      // For clients, ensure they don't land on admin routes
+      if (!targetRoute || targetRoute.startsWith('/admin')) {
+        targetRoute = '/home';
+      }
+    }
 
     setTimeout(() => {
-      const redirect = route.query.redirect || '/home';
-      router.push(redirect);
-    }, 800);
+      router.push(targetRoute);
+    }, 250);
   } catch (err) {
     errorMessage.value = err.message || 'Login failed. Please check your credentials.';
   } finally {

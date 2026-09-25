@@ -12,7 +12,18 @@ from .views import (
     SignUpView,
     LoginView,
     LogoutView,
-    UserProfileView
+    UserProfileView,
+    AdminOverviewView,
+    AdminServiceListCreateView,
+    AdminServiceDetailView,
+    AdminTimeSlotListCreateView,
+    AdminTimeSlotBulkCreateView,
+    AdminTimeSlotDetailView,
+    AdminBookingListView,
+    AdminBookingDetailView,
+    AdminCustomerListView,
+    AdminCustomerDetailView,
+    AdminCustomerPassView
 )
 
 urlpatterns = [
@@ -32,4 +43,18 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view(), name='auth-login'),
     path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
     path('auth/me/', UserProfileView.as_view(), name='auth-me'),
+
+    # Admin Management Endpoints
+    path('admin/overview/', AdminOverviewView.as_view(), name='admin-overview'),
+    path('admin/services/', AdminServiceListCreateView.as_view(), name='admin-services'),
+    path('admin/services/<uuid:pk>/', AdminServiceDetailView.as_view(), name='admin-service-detail'),
+    path('admin/slots/', AdminTimeSlotListCreateView.as_view(), name='admin-slots'),
+    path('admin/slots/bulk-generate/', AdminTimeSlotBulkCreateView.as_view(), name='admin-slots-bulk-generate'),
+    path('admin/slots/<uuid:pk>/', AdminTimeSlotDetailView.as_view(), name='admin-slot-detail'),
+    path('admin/bookings/', AdminBookingListView.as_view(), name='admin-bookings'),
+    path('admin/bookings/<uuid:pk>/', AdminBookingDetailView.as_view(), name='admin-booking-detail'),
+    path('admin/customers/', AdminCustomerListView.as_view(), name='admin-customers'),
+    path('admin/customers/<int:pk>/', AdminCustomerDetailView.as_view(), name='admin-customer-detail'),
+    path('admin/customers/<int:pk>/passes/', AdminCustomerPassView.as_view(), name='admin-customer-pass'),
 ]
+

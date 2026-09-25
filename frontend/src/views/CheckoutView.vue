@@ -229,26 +229,29 @@
       </div>
     </main>
 
-    <!-- Payment Success / STK Push Simulation Modal -->
-    <div v-if="showSuccessModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-outline-variant/30 dark:border-slate-800 text-center">
-        <div class="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto mb-4">
-          <span class="material-symbols-outlined text-3xl">celebration</span>
+    <!-- Payment Success / STK Push Simulation Modal (Teleported to body) -->
+    <Teleport to="body">
+      <div v-if="showSuccessModal" class="fixed inset-0 z-[100] flex items-center justify-center p-3.5 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fadeIn">
+        <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-outline-variant/30 dark:border-slate-800 text-center my-auto">
+          <div class="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto mb-4">
+            <span class="material-symbols-outlined text-3xl">celebration</span>
+          </div>
+          <h3 class="font-headline-lg text-2xl font-bold text-primary-container dark:text-white mb-2">
+            Reservation Confirmed!
+          </h3>
+          <p class="font-body-md text-sm text-on-surface-variant dark:text-slate-300 mb-6 leading-relaxed">
+            Your session with Karina has been reserved for <strong class="text-primary-container dark:text-white">{{ draft.dateDisplay || draft.date }} at {{ draft.timeSlot }}</strong>. A confirmation SMS &amp; email have been dispatched.
+          </p>
+          <button 
+            @click="finishCheckout"
+            class="w-full py-3.5 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-sm font-bold shadow-md active:scale-95 transition-all"
+            type="button"
+          >
+            View My Bookings &amp; Passes
+          </button>
         </div>
-        <h3 class="font-headline-lg text-2xl font-bold text-primary-container dark:text-white mb-2">
-          Reservation Confirmed!
-        </h3>
-        <p class="font-body-md text-sm text-on-surface-variant dark:text-slate-300 mb-6 leading-relaxed">
-          Your session with Karina has been reserved for <strong class="text-primary-container dark:text-white">{{ draft.dateDisplay || draft.date }} at {{ draft.timeSlot }}</strong>. A confirmation SMS &amp; email have been dispatched.
-        </p>
-        <button 
-          @click="finishCheckout"
-          class="w-full py-3.5 rounded-full bg-primary-container text-on-primary font-label-md text-sm font-semibold shadow-md active:scale-95 transition-all"
-        >
-          View My Bookings &amp; Passes
-        </button>
       </div>
-    </div>
+    </Teleport>
 
     <AppBottomNav />
   </div>

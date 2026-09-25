@@ -3,16 +3,19 @@
 @tailwind utilities;
 
 @layer base {
-  html, body {
-    width: 100%;
-    margin: 0;
-    padding: 0;
+  html {
+    overflow-y: scroll;
+    scroll-behavior: smooth;
     background-color: #faf8ff;
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
-  
+
   body {
-    overscroll-behavior-y: none;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: clip;
     -webkit-tap-highlight-color: transparent;
   }
   

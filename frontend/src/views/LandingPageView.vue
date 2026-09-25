@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <!-- MAIN BODY -->
-    <main class="w-full pt-20">
+    <main class="w-full pt-16 sm:pt-[72px] pb-24 md:pb-16">
       <!-- HERO SECTION -->
       <section class="relative overflow-hidden pt-space-lg pb-space-xl">
         <div class="absolute -top-32 -left-20 w-96 h-96 rounded-full bg-secondary-container/20 dark:bg-sky-900/20 blur-3xl pointer-events-none"></div>
@@ -93,7 +93,8 @@
                   <img 
                     alt="Karina Trainer Profile" 
                     class="w-full h-full object-cover" 
-                    src="https://lh3.googleusercontent.com/aida/AEtjO1UwxvO7_3GTbgWd4EMPt4rt_w381oAezID3bV9-NdwIdn55FZ_9EuUxkek0b1g_CCD7OREkS7yHj5Cgb747yd7hji3o7wMsF5yMWX7Y-9WXeuNJSV87pRW9T6yotkdPzul6-kYjIysNWHJ6rcSRnoCnngzil7rsid2c6iewLxqYX2u5vPcQFLY7r3ZEkPxwmhnE8RfShmfVHjQTEbYJSi9MwKlsQzRFBydQI4ftgATXc7O0xLaTmJmS44Z2gA8121FAes4FrKhN"
+                    src="https://images.unsplash.com/photo-1594381898411-846e7d193883?auto=format&fit=crop&w=800&q=80"
+                    @error="e => e.target.src = 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80'"
                   />
                   <!-- Organic Hand-annotated stickers -->
                   <div class="absolute top-4 left-4 bg-surface-container-lowest/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
@@ -230,7 +231,7 @@
           <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-space-md shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-outline-variant/30 dark:border-slate-800">
             <div>
               <div class="rounded-2xl overflow-hidden aspect-[4/3] mb-space-md bg-surface-container-low relative">
-                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC31aM_AX6YSf4V_IcpFk7BMQSinLhnKU3TEi85lmhm_5i6_Gj37JjJVE2g7SknBQYb5RIxDvrC93gtNYrn1WE8W_XNrp9w6xYeA5uuv4wTOwz7khUCzMDdwFCwOlulG_F2udydiStm6btwh3op03z_viYXogaFYcTNDN28ns5C45vhoWrKT4T1zGXDs53AdRetJAsHItwbov736zE_oum5C3jl4soALAh-NuPxiofiq31P9VkQiEDv"/>
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80" @error="e => e.target.src = 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80'"/>
                 <span class="absolute top-3 left-3 bg-surface-container-lowest/90 dark:bg-slate-900/90 backdrop-blur-sm px-2.5 py-1 rounded-full font-label-sm text-label-sm text-primary-container dark:text-white font-semibold">1:1 Private</span>
               </div>
               <div class="flex items-center justify-between text-secondary font-label-sm text-label-sm mb-1">
@@ -261,7 +262,7 @@
           <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-space-md shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group border border-outline-variant/30 dark:border-slate-800">
             <div>
               <div class="rounded-2xl overflow-hidden aspect-[4/3] mb-space-md bg-surface-container-low relative">
-                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxUvgYsQ9RrPr6umF_oPYY246jz32DciVxngfmjVHfHztegGRX65Vx8HPeeM49Uev-tnnbuoFay4j7VP_42Fd6IRqDHT8gifjqTgWpXfN7_PZ6r8gLvtPrcJPAlfWHkNJ5Y8FywVzH6dlGyX1BctagCiRG0p680K8AVVHcLlOTCbXy6qUonMihyLuQpcHNbGA7woJo3b82zZvIp__SYjd3k_rmQmOn3iBpomPdOCcnp0uOx2tu-SLK"/>
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80" @error="e => e.target.src = 'https://images.unsplash.com/photo-1594381898411-846e7d193883?auto=format&fit=crop&w=800&q=80'"/>
                 <span class="absolute top-3 left-3 bg-secondary-container dark:bg-sky-400 text-primary-container dark:text-slate-900 px-2.5 py-1 rounded-full font-label-sm text-label-sm font-semibold">Most Popular</span>
               </div>
               <div class="flex items-center justify-between text-secondary font-label-sm text-label-sm mb-1">
@@ -361,7 +362,8 @@
                 <img 
                   alt="Karina Coaching" 
                   class="w-full h-full object-cover" 
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1UwxvO7_3GTbgWd4EMPt4rt_w381oAezID3bV9-NdwIdn55FZ_9EuUxkek0b1g_CCD7OREkS7yHj5Cgb747yd7hji3o7wMsF5yMWX7Y-9WXeuNJSV87pRW9T6yotkdPzul6-kYjIysNWHJ6rcSRnoCnngzil7rsid2c6iewLxqYX2u5vPcQFLY7r3ZEkPxwmhnE8RfShmfVHjQTEbYJSi9MwKlsQzRFBydQI4ftgATXc7O0xLaTmJmS44Z2gA8121FAes4FrKhN"
+                  src="https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1000&q=80"
+                  @error="e => e.target.src = 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80'"
                 />
               </div>
             </div>

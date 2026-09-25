@@ -9,6 +9,14 @@ import CheckoutView from '@/views/CheckoutView.vue';
 import MyBookingsView from '@/views/MyBookingsView.vue';
 import AuthView from '@/views/AuthView.vue';
 
+// Admin Portal Modular Components
+import AdminLayout from '@/layouts/AdminLayout.vue';
+import AdminOverviewView from '@/views/admin/AdminOverviewView.vue';
+import AdminServicesView from '@/views/admin/AdminServicesView.vue';
+import AdminSessionsView from '@/views/admin/AdminSessionsView.vue';
+import AdminBookingsView from '@/views/admin/AdminBookingsView.vue';
+import AdminCustomersView from '@/views/admin/AdminCustomersView.vue';
+
 const routes = [
   {
     path: '/',
@@ -50,6 +58,25 @@ const routes = [
     name: 'bookings',
     component: MyBookingsView
   },
+  
+  // Dedicated Multi-Page Admin Portal
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: { requiresAdmin: true },
+    children: [
+      { path: '', redirect: '/admin/overview' },
+      { path: 'overview', name: 'admin-overview', component: AdminOverviewView },
+      { path: 'services', name: 'admin-services', component: AdminServicesView },
+      { path: 'sessions', name: 'admin-sessions', component: AdminSessionsView },
+      { path: 'bookings', name: 'admin-bookings', component: AdminBookingsView },
+      { path: 'customers', name: 'admin-customers', component: AdminCustomersView },
+    ]
+  },
+  {
+    path: '/admin-dashboard',
+    redirect: '/admin/overview'
+  },
   {
     path: '/login',
     name: 'login',
@@ -76,6 +103,35 @@ const router = createRouter({
   scrollBehavior() {
     return { top: 0 };
   }
+});
+
+// Global Navigation Guard for Administrator Verification
+router.beforeEach((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    const token = localStorage.getItem('karina_auth_token');
+    const userStr = localStorage.getItem('karina_auth_user');
+    let user = null;
+    try {
+      user = userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      user = null;
+    }
+    const isStaff = Boolean(user && (
+      user.is_staff || 
+      user.is_superuser || 
+      user.role === 'admin' || 
+      user.username === 'admin' || 
+      (user.email && user.email.toLowerCase().includes('admin'))
+    ));
+
+    if (!token || !user) {
+      return next({ path: '/login', query: { redirect: to.fullPath } });
+    }
+    if (!isStaff) {
+      return next({ path: '/home' });
+    }
+  }
+  next();
 });
 
 export default router;

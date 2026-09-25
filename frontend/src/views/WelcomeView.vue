@@ -41,7 +41,8 @@
           <img 
             alt="Karina smiling warmly in movement studio attire" 
             class="w-full h-full object-cover object-top" 
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9w-zFFy0eYXjrSqdgU3shmGPLfmuG0y0KD5JM2HH8KVpqyVx3fNJ7bwnH8cxq0rpUyOt8sns9xMclP845Lp-XkFGCucsG5JcbSagafCUpLLIE4kJZFDfbMMrgClhvwLzmTfJIqEtj6Dqd2MKpTU8uGzCQeN9apiwQ_sXNSpWw_bfRI2PVBRlLHsEPeXRQ6AuBHcrGTQPnPRYtZjh7OfosESaciqJ8vpEZc-XltBXjNCYbL2td_CXot3XOtGmFxA4jWg"
+            src="https://images.unsplash.com/photo-1594381898411-846e7d193883?auto=format&fit=crop&w=800&q=80"
+            @error="e => e.target.src = 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80'"
           />
           <!-- Tactile Floating Motifs / Badges -->
           <div class="absolute top-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm rounded-full py-1.5 px-3 flex items-center space-x-1.5 shadow-sm text-primary">

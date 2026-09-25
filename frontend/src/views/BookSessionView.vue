@@ -238,7 +238,7 @@ const activeService = ref({
   slug: 'reformer',
   price_kes: 6500,
   price_eur: 75,
-  image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBxUvgYsQ9RrPr6umF_oPYY246jz32DciVxngfmjVHfHztegGRX65Vx8HPeeM49Uev-tnnbuoFay4j7VP_42Fd6IRqDHT8gifjqTgWpXfN7_PZ6r8gLvtPrcJPAlfWHkNJ5Y8FywVzH6dlGyX1BctagCiRG0p680K8AVVHcLlOTCbXy6qUonMihyLuQpcHNbGA7woJo3b82zZvIp__SYjd3k_rmQmOn3iBpomPdOCcnp0uOx2tu-SLK'
+  image_url: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80'
 });
 
 const morningSlots = [

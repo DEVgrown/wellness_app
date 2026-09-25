@@ -227,56 +227,73 @@
       </div>
     </main>
 
-    <!-- Reschedule Modal -->
-    <div v-if="rescheduleModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-outline-variant/30 dark:border-slate-800">
-        <h3 class="font-headline-sm text-lg font-bold text-primary-container dark:text-white mb-2">Reschedule Session</h3>
-        <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mb-4">
-          Select a new date and time for {{ activeBooking?.service_title }}.
-        </p>
-
-        <div class="space-y-4 mb-6">
-          <div>
-            <label class="block font-label-sm text-xs text-on-surface-variant dark:text-slate-300 mb-1">New Date</label>
-            <input 
-              v-model="newDate" 
-              type="date" 
-              class="w-full px-3 py-2 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/40 dark:border-slate-700 text-sm"
-            />
+    <!-- Reschedule Modal (Teleported to body for guaranteed viewport centering) -->
+    <Teleport to="body">
+      <div v-if="rescheduleModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-3.5 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fadeIn">
+        <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-outline-variant/30 dark:border-slate-800 flex flex-col my-auto">
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-outline-variant/20 dark:border-slate-800">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-secondary-container/40 dark:bg-sky-950 text-secondary dark:text-sky-300 flex items-center justify-center">
+                <span class="material-symbols-outlined text-lg">schedule</span>
+              </div>
+              <h3 class="font-headline-sm text-base sm:text-lg font-bold text-primary-container dark:text-white">
+                Reschedule Session
+              </h3>
+            </div>
+            <button @click="rescheduleModalOpen = false" class="w-8 h-8 rounded-full bg-surface-container-low dark:bg-slate-800 hover:bg-surface-container flex items-center justify-center text-on-surface dark:text-slate-300 font-bold transition-colors">
+              &times;
+            </button>
           </div>
-          <div>
-            <label class="block font-label-sm text-xs text-on-surface-variant dark:text-slate-300 mb-1">New Time Slot</label>
-            <select 
-              v-model="newSlot" 
-              class="w-full px-3 py-2 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/40 dark:border-slate-700 text-sm"
-            >
-              <option value="08:00 AM">08:00 AM</option>
-              <option value="09:30 AM">09:30 AM</option>
-              <option value="11:00 AM">11:00 AM</option>
-              <option value="02:00 PM">02:00 PM</option>
-              <option value="04:30 PM">04:30 PM</option>
-            </select>
-          </div>
-        </div>
 
-        <div class="flex items-center justify-end gap-2">
-          <button 
-            @click="rescheduleModalOpen = false" 
-            class="px-4 py-2 rounded-full font-label-sm text-xs text-on-surface-variant"
-            type="button"
-          >
-            Cancel
-          </button>
-          <button 
-            @click="submitReschedule" 
-            class="px-5 py-2 rounded-full bg-primary-container text-white font-label-sm text-xs font-semibold shadow-xs"
-            type="button"
-          >
-            Confirm Reschedule
-          </button>
+          <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mb-4">
+            Select a new date and time for <strong class="text-primary-container dark:text-white font-semibold">{{ activeBooking?.service_title }}</strong>.
+          </p>
+
+          <form @submit.prevent="submitReschedule" class="space-y-4">
+            <div>
+              <label class="block font-label-sm text-xs font-semibold mb-1 text-on-surface dark:text-slate-300">New Date *</label>
+              <input 
+                v-model="newDate" 
+                type="date" 
+                required
+                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs text-on-surface dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-container/20"
+              />
+            </div>
+            <div>
+              <label class="block font-label-sm text-xs font-semibold mb-1 text-on-surface dark:text-slate-300">New Time Slot *</label>
+              <select 
+                v-model="newSlot" 
+                required
+                class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs text-on-surface dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-container/20"
+              >
+                <option value="08:00 AM">08:00 AM (Morning Calm)</option>
+                <option value="09:30 AM">09:30 AM (Morning Prime)</option>
+                <option value="11:00 AM">11:00 AM (Midday Focus)</option>
+                <option value="02:00 PM">02:00 PM (Afternoon Alignment)</option>
+                <option value="04:30 PM">04:30 PM (Evening Sunset)</option>
+              </select>
+            </div>
+
+            <div class="pt-3 border-t border-outline-variant/20 dark:border-slate-800 flex items-center justify-end gap-2.5">
+              <button 
+                @click="rescheduleModalOpen = false" 
+                type="button"
+                class="px-4 py-2 rounded-full font-label-sm text-xs font-semibold text-on-surface-variant hover:bg-surface-container-low transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                class="px-5 py-2.5 rounded-full bg-primary-container hover:bg-primary text-white font-label-sm text-xs font-bold shadow-xs active:scale-95 transition-all"
+              >
+                Confirm Reschedule
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    </div>
+    </Teleport>
 
     <AppBottomNav />
   </div>

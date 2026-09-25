@@ -86,7 +86,8 @@
                 <img 
                   class="w-full h-full object-cover" 
                   alt="Karen Studio" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIbQnXjnlDtQMmLQ1SS2pYB9QhB3BbMG5AERAj7d3BLRxymzGLhNWDjicBtVQjnLhBGwtkEZn9OYGGDAmKPJWgxHe7d0K_I3N7xq3aOHXJzef9uoZs9WQ5ALuZ-rlgtb0_yPrXcsv9hoq98c2M_KRPtx4PnrdJNMI0OJ3a40KNv0ELt21Hf7yyA9xNKNagAIjW6tv58ZitcSq2jU__9C9Re7zcWg_FDgLwN5aCXqovuB5PnfjV5w42"
+                  src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1000&q=80"
+                  @error="e => e.target.src = 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1000&q=80'"
                 />
                 <div class="absolute bottom-4 left-4 right-4 bg-surface-container-lowest/90 dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl flex items-center justify-between shadow-sm">
                   <div class="flex items-center gap-3">
