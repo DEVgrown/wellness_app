@@ -6,7 +6,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'karina_backend.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
+from booking_api.models import UserProfile
 
 admin_username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
 admin_email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@karinawellness.com')
@@ -32,9 +32,13 @@ admin_user.email = admin_email
 admin_user.set_password(admin_password)
 admin_user.save()
 
-token, _ = Token.objects.get_or_create(user=admin_user)
+profile, _ = UserProfile.objects.get_or_create(user=admin_user)
+profile.role = UserProfile.Role.STUDIO_ADMIN
+profile.phone = '+254 700 000 000'
+profile.bio = 'Founder & Master Movement Practitioner at Karina Wellness Sanctuary.'
+profile.save()
 
-print(f"Superuser '{admin_username}' provisioned with staff & superuser privileges.")
+print(f"Superuser '{admin_username}' provisioned with staff, superuser, and studio_admin role.")
 if generated_pw:
     print(f"NOTICE: Temporary password generated: {admin_password}")
     print("Please change this password immediately in production.")

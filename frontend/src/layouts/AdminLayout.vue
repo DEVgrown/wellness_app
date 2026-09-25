@@ -50,19 +50,26 @@
 
           <!-- Current Admin Profile Snippet -->
           <div class="flex items-center justify-between px-1">
-            <div class="flex items-center gap-2.5 overflow-hidden">
-              <div class="w-8 h-8 rounded-full bg-secondary-container/40 text-secondary font-bold flex items-center justify-center text-xs shrink-0">
-                {{ (authStore.user.value?.name || 'A').charAt(0).toUpperCase() }}
+            <router-link to="/admin/profile" class="flex items-center gap-2.5 overflow-hidden group hover:opacity-90 transition-opacity">
+              <div class="w-8 h-8 rounded-full overflow-hidden bg-primary-container text-white font-bold flex items-center justify-center text-xs shrink-0 ring-1 ring-secondary/30">
+                <img
+                  v-if="adminAvatarUrl && !adminAvatarFailed"
+                  :src="adminAvatarUrl"
+                  alt="Admin Avatar"
+                  class="w-full h-full object-cover"
+                  @error="adminAvatarFailed = true"
+                />
+                <span v-else>{{ adminInitial }}</span>
               </div>
               <div class="truncate">
-                <p class="font-label-md text-xs font-bold text-primary-container dark:text-white truncate">
+                <p class="font-label-md text-xs font-bold text-primary-container dark:text-white truncate group-hover:text-secondary transition-colors">
                   {{ authStore.user.value?.name || authStore.user.value?.username }}
                 </p>
                 <p class="font-body-sm text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Verified Admin
                 </p>
               </div>
-            </div>
+            </router-link>
             <button
               @click="handleLogout"
               class="w-7 h-7 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950 flex items-center justify-center transition-colors"
@@ -159,8 +166,15 @@
                 type="button"
                 aria-label="Admin Profile Menu"
               >
-                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary-container text-white font-bold flex items-center justify-center text-xs shadow-xs relative">
-                  {{ (authStore.user.value?.name || authStore.user.value?.username || 'A').charAt(0).toUpperCase() }}
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-primary-container text-white font-bold flex items-center justify-center text-xs shadow-xs relative">
+                  <img
+                    v-if="adminAvatarUrl && !adminAvatarFailed"
+                    :src="adminAvatarUrl"
+                    alt="Admin Avatar"
+                    class="w-full h-full object-cover"
+                    @error="adminAvatarFailed = true"
+                  />
+                  <span v-else>{{ adminInitial }}</span>
                   <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"></span>
                 </div>
               </button>
@@ -186,6 +200,14 @@
                 </div>
 
                 <div class="py-1">
+                  <router-link
+                    to="/admin/profile"
+                    class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-primary-container dark:text-sky-300 hover:bg-surface-container-low dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <span class="material-symbols-outlined text-base text-secondary">manage_accounts</span>
+                    <span>Admin Profile &amp; Settings</span>
+                  </router-link>
+
                   <router-link
                     to="/"
                     class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-on-surface dark:text-slate-200 hover:bg-surface-container-low dark:hover:bg-slate-800 transition-colors"
@@ -302,14 +324,25 @@ const bookingStore = useBookingStore();
 const mobileDrawerOpen = ref(false);
 const showProfileMenu = ref(false);
 const liveTime = ref('');
+const adminAvatarFailed = ref(false);
 let timer = null;
+
+const adminAvatarUrl = computed(() => {
+  return authStore.user.value?.avatar || authStore.user.value?.avatar_url || null;
+});
+
+const adminInitial = computed(() => {
+  const name = authStore.user.value?.name || authStore.user.value?.first_name || authStore.user.value?.username || 'A';
+  return name.charAt(0).toUpperCase();
+});
 
 const navItems = [
   { to: '/admin/overview', label: 'Overview & KPIs', icon: 'dashboard' },
   { to: '/admin/services', label: 'Service Offerings', icon: 'spa' },
   { to: '/admin/sessions', label: 'Sessions & Slots', icon: 'calendar_month' },
   { to: '/admin/bookings', label: 'Bookings & Roster', icon: 'event_available' },
-  { to: '/admin/customers', label: 'Customers & CRM', icon: 'groups' }
+  { to: '/admin/customers', label: 'Customers & CRM', icon: 'groups' },
+  { to: '/admin/profile', label: 'Profile & Settings', icon: 'manage_accounts' }
 ];
 
 const currentSectionTitle = computed(() => {
@@ -318,6 +351,7 @@ const currentSectionTitle = computed(() => {
   if (p.includes('/sessions')) return 'Sessions & Scheduling Engine';
   if (p.includes('/bookings')) return 'Client Bookings & Attendance';
   if (p.includes('/customers')) return 'Customers & CRM Directory';
+  if (p.includes('/profile')) return 'Administrator Profile & Security';
   return 'Studio Operations Overview';
 });
 

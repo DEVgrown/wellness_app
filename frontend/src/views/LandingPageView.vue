@@ -60,10 +60,10 @@
 
               <!-- CTAs -->
               <div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
-                <a href="#quick-booking" class="inline-flex items-center justify-center gap-2 bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg px-8 py-3.5 rounded-full shadow-md transition-all active:scale-[0.98]">
+                <router-link to="/book" class="inline-flex items-center justify-center gap-2 bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg px-8 py-3.5 rounded-full shadow-md transition-all active:scale-[0.98]">
                   <span>Book a Session</span>
                   <span class="material-symbols-outlined text-lg">arrow_forward</span>
-                </a>
+                </router-link>
                 <router-link to="/services" class="inline-flex items-center justify-center bg-surface-container-lowest dark:bg-slate-800 text-primary-container dark:text-white font-label-lg text-label-lg px-7 py-3.5 rounded-full shadow-sm hover:bg-surface-container-low dark:hover:bg-slate-700 transition-all border border-outline-variant/30 dark:border-slate-700">
                   Explore Services
                 </router-link>

@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TransactionTestCase
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 from booking_api.models import Service, TimeSlot, Booking
 
 User = get_user_model()
@@ -46,12 +46,11 @@ class PessimisticConcurrencyBookingTestCase(TransactionTestCase):
             user = User.objects.create_user(
                 username=f'client_concurrency_{i}',
                 email=f'client_{i}@test.com',
-                password='Password123!',
-                role=User.Role.CLIENT
+                password='Password123!'
             )
-            token = Token.objects.create(user=user)
+            refresh = RefreshToken.for_user(user)
             client = APIClient()
-            client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+            client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(refresh.access_token))
             self.clients.append((user, client))
 
     def test_concurrent_bookings_for_single_spot_guarantees_exactly_one_winner(self):

@@ -7,6 +7,7 @@ import ServiceDetailView from '@/views/ServiceDetailView.vue';
 import BookSessionView from '@/views/BookSessionView.vue';
 import CheckoutView from '@/views/CheckoutView.vue';
 import MyBookingsView from '@/views/MyBookingsView.vue';
+import ProfileView from '@/views/ProfileView.vue';
 import AuthView from '@/views/AuthView.vue';
 
 // Admin Portal Modular Components
@@ -16,6 +17,7 @@ import AdminServicesView from '@/views/admin/AdminServicesView.vue';
 import AdminSessionsView from '@/views/admin/AdminSessionsView.vue';
 import AdminBookingsView from '@/views/admin/AdminBookingsView.vue';
 import AdminCustomersView from '@/views/admin/AdminCustomersView.vue';
+import AdminProfileView from '@/views/admin/AdminProfileView.vue';
 
 const routes = [
   {
@@ -73,6 +75,7 @@ const routes = [
       { path: 'sessions', name: 'admin-sessions', component: AdminSessionsView },
       { path: 'bookings', name: 'admin-bookings', component: AdminBookingsView },
       { path: 'customers', name: 'admin-customers', component: AdminCustomersView },
+      { path: 'profile', name: 'admin-profile', component: AdminProfileView },
     ]
   },
   {
@@ -91,7 +94,9 @@ const routes = [
   },
   {
     path: '/profile',
-    redirect: '/bookings'
+    name: 'profile',
+    component: ProfileView,
+    meta: { requiresAuth: true }
   },
   {
     path: '/:pathMatch(.*)*',

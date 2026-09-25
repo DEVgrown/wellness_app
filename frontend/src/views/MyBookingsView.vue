@@ -33,7 +33,9 @@
               <span class="material-symbols-outlined text-xl">confirmation_number</span>
             </div>
             <div>
-              <span class="font-headline-sm text-xl font-bold text-primary-container dark:text-white block">3 Left</span>
+              <span class="font-headline-sm text-xl font-bold text-primary-container dark:text-white block">
+                {{ totalRemainingCredits }} Left
+              </span>
               <span class="font-label-sm text-xs text-on-surface-variant dark:text-slate-400">Pass Credits</span>
             </div>
           </div>
@@ -63,8 +65,10 @@
               <span class="material-symbols-outlined text-xl">schedule</span>
             </div>
             <div>
-              <span class="font-headline-sm text-base font-bold text-primary-container dark:text-white block">Tomorrow</span>
-              <span class="font-label-sm text-xs text-on-surface-variant dark:text-slate-400">Next: 09:30 AM</span>
+              <span class="font-headline-sm text-sm sm:text-base font-bold text-primary-container dark:text-white block truncate">
+                {{ nextSessionDisplay }}
+              </span>
+              <span class="font-label-sm text-xs text-on-surface-variant dark:text-slate-400">Next Reserved</span>
             </div>
           </div>
         </div>
@@ -74,7 +78,7 @@
           <!-- LEFT COLUMN: Bookings List & Tabs (8 Cols) -->
           <div class="lg:col-span-8 flex flex-col gap-6">
             <!-- Filter Tabs -->
-            <div class="flex items-center gap-2 p-1 bg-surface-container-low dark:bg-slate-800 rounded-full max-w-sm">
+            <div class="flex items-center gap-2 p-1 bg-surface-container-low dark:bg-slate-800 rounded-full max-w-md">
               <button 
                 @click="activeTab = 'upcoming'" 
                 :class="activeTab === 'upcoming' ? 'bg-surface-container-lowest dark:bg-slate-700 text-primary-container dark:text-white font-semibold shadow-xs' : 'text-on-surface-variant dark:text-slate-400 hover:text-on-surface'"
@@ -89,7 +93,7 @@
                 class="flex-1 py-1.5 px-3 rounded-full font-label-sm text-xs transition-all"
                 type="button"
               >
-                Past Sessions
+                Past ({{ pastCount }})
               </button>
               <button 
                 @click="activeTab = 'cancelled'" 
@@ -97,7 +101,7 @@
                 class="flex-1 py-1.5 px-3 rounded-full font-label-sm text-xs transition-all"
                 type="button"
               >
-                Cancelled
+                Cancelled ({{ cancelledCount }})
               </button>
             </div>
 
@@ -114,11 +118,19 @@
                       🧘
                     </div>
                     <div>
-                      <h3 class="font-headline-sm text-lg font-bold text-primary-container dark:text-white">
-                        {{ booking.service_title }}
-                      </h3>
-                      <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400">
-                        {{ booking.booking_date }} at {{ booking.time_slot }} • {{ booking.location_name }}
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <h3 class="font-headline-sm text-lg font-bold text-primary-container dark:text-white">
+                          {{ booking.service_title }}
+                        </h3>
+                        <span 
+                          v-if="booking.payment_method === 'pass'"
+                          class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-primary font-label-sm text-[10px] font-bold"
+                        >
+                          <span class="material-symbols-outlined text-[12px]">confirmation_number</span> Studio Pass
+                        </span>
+                      </div>
+                      <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mt-0.5">
+                        {{ formatDate(booking.booking_date) }} at {{ booking.time_slot }} • {{ booking.location_name }}
                       </p>
                     </div>
                   </div>
@@ -127,17 +139,18 @@
                     :class="{
                       'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300': booking.status === 'confirmed',
                       'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300': booking.status === 'completed',
-                      'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300': booking.status === 'cancelled'
+                      'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300': booking.status === 'cancelled',
+                      'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300': booking.status === 'pending_payment'
                     }"
                     class="px-3 py-1 rounded-full font-label-sm text-xs font-semibold capitalize self-start sm:self-auto"
                   >
-                    {{ booking.status }}
+                    {{ booking.status === 'pending_payment' ? 'Pending Payment' : booking.status }}
                   </span>
                 </div>
 
                 <!-- Session Details / Notes -->
                 <p v-if="booking.coach_notes || booking.notes" class="text-xs text-on-surface-variant dark:text-slate-300 bg-surface dark:bg-slate-800/60 p-3 rounded-2xl mb-4 border border-outline-variant/20 dark:border-slate-700">
-                  <span class="font-semibold text-primary-container dark:text-white">Coach Note:</span> {{ booking.coach_notes || booking.notes }}
+                  <span class="font-semibold text-primary-container dark:text-white">Note:</span> {{ booking.coach_notes || booking.notes }}
                 </p>
 
                 <!-- Actions for Upcoming -->
@@ -180,47 +193,135 @@
             </div>
           </div>
 
-          <!-- RIGHT COLUMN: Active Pass Card & Studio Information (4 Cols) -->
+          <!-- RIGHT COLUMN: Real User Passes & Studio Guidelines (4 Cols) -->
           <div class="lg:col-span-4 flex flex-col gap-6 sticky top-28">
-            <!-- Active Pass Widget -->
-            <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-outline-variant/30 dark:border-slate-800">
-              <span class="font-eyebrow text-eyebrow text-secondary uppercase tracking-wider block mb-1">Pass Status</span>
-              <h3 class="font-headline-sm text-lg font-bold text-primary-container dark:text-white mb-2">
-                Pilates Reformer Pass (5 Pack)
-              </h3>
-              <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mb-4">
-                Valid at Karen Studio &amp; Salzburg Sanctuary.
-              </p>
-
-              <!-- Session Tokens Progress -->
-              <div class="grid grid-cols-5 gap-1.5 mb-4">
-                <div class="h-8 rounded-lg bg-primary-container text-white flex items-center justify-center font-bold text-xs">✓</div>
-                <div class="h-8 rounded-lg bg-primary-container text-white flex items-center justify-center font-bold text-xs">✓</div>
-                <div class="h-8 rounded-lg bg-secondary text-white flex items-center justify-center font-bold text-xs">3</div>
-                <div class="h-8 rounded-lg bg-surface-container dark:bg-slate-800 text-on-surface-variant flex items-center justify-center font-bold text-xs">4</div>
-                <div class="h-8 rounded-lg bg-surface-container dark:bg-slate-800 text-on-surface-variant flex items-center justify-center font-bold text-xs">5</div>
+            <!-- Studio Passes Container -->
+            <div class="space-y-4">
+              <div class="flex items-center justify-between px-1">
+                <h2 class="font-headline-sm text-base font-bold text-primary-container dark:text-white flex items-center gap-2">
+                  <span class="material-symbols-outlined text-secondary text-lg">confirmation_number</span>
+                  <span>My Studio Passes</span>
+                </h2>
+                <router-link 
+                  to="/services" 
+                  class="font-label-sm text-xs font-semibold text-secondary hover:underline"
+                >
+                  + Add Pass
+                </router-link>
               </div>
 
-              <div class="flex items-center justify-between text-xs text-on-surface-variant dark:text-slate-400 mb-6">
-                <span>Expires 30 Nov 2026</span>
-                <span class="font-semibold text-emerald-600 dark:text-emerald-400">Active</span>
-              </div>
-
-              <router-link 
-                to="/services" 
-                class="w-full py-3 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1.5"
+              <!-- Render Live User Packages -->
+              <div 
+                v-for="pkg in packages" 
+                :key="pkg.id"
+                class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-outline-variant/30 dark:border-slate-800"
               >
-                <span>Top Up / Add Sessions</span>
-                <span class="material-symbols-outlined text-sm">add</span>
-              </router-link>
+                <div class="flex items-center justify-between gap-2 mb-1.5">
+                  <span class="font-eyebrow text-eyebrow text-secondary uppercase tracking-wider block">Pass Status</span>
+                  <span 
+                    :class="{
+                      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800': pkg.status === 'active',
+                      'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700': pkg.status === 'fully_used',
+                      'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-200 dark:border-amber-800': pkg.status === 'expired'
+                    }"
+                    class="px-2.5 py-0.5 rounded-full font-label-sm text-[11px] font-bold border capitalize"
+                  >
+                    {{ pkg.status === 'fully_used' ? 'Fully Used' : pkg.status }}
+                  </span>
+                </div>
+
+                <h3 class="font-headline-sm text-base font-bold text-primary-container dark:text-white mb-1">
+                  {{ pkg.package_name }}
+                </h3>
+                <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mb-4">
+                  {{ pkg.remaining_sessions }} of {{ pkg.total_sessions }} sessions remaining
+                </p>
+
+                <!-- Interactive Session Tokens Progress Grid -->
+                <div 
+                  class="grid gap-1.5 mb-4" 
+                  :style="{ gridTemplateColumns: `repeat(${Math.min(pkg.total_sessions, 6)}, minmax(0, 1fr))` }"
+                >
+                  <div 
+                    v-for="i in Math.min(pkg.total_sessions, 12)" 
+                    :key="i"
+                    :class="[
+                      i <= pkg.used_sessions 
+                        ? 'bg-primary-container text-white' 
+                        : (i === pkg.used_sessions + 1 && pkg.remaining_sessions > 0)
+                          ? 'bg-secondary text-white ring-2 ring-secondary/40' 
+                          : 'bg-surface-container dark:bg-slate-800 text-on-surface-variant dark:text-slate-400'
+                    ]"
+                    class="h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all shadow-2xs"
+                    :title="i <= pkg.used_sessions ? `Session ${i} (Used)` : `Session ${i} (Available)`"
+                  >
+                    {{ i <= pkg.used_sessions ? '✓' : i }}
+                  </div>
+                </div>
+
+                <!-- Session Stats & Validity Date -->
+                <div class="flex items-center justify-between text-xs text-on-surface-variant dark:text-slate-400 mb-4 pt-2 border-t border-outline-variant/10 dark:border-slate-800">
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-xs text-secondary">verified</span>
+                    <span>Used: {{ pkg.used_sessions }} / {{ pkg.total_sessions }}</span>
+                  </span>
+                  <span class="font-medium">
+                    {{ pkg.valid_until ? `Valid until ${formatDate(pkg.valid_until)}` : 'No Expiry' }}
+                  </span>
+                </div>
+
+                <!-- Action Button -->
+                <router-link 
+                  v-if="pkg.remaining_sessions > 0"
+                  to="/book" 
+                  class="w-full py-2.5 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1.5"
+                >
+                  <span class="material-symbols-outlined text-sm">event</span>
+                  <span>Book with Pass</span>
+                </router-link>
+                <router-link 
+                  v-else
+                  to="/services" 
+                  class="w-full py-2.5 rounded-full bg-surface-container-low dark:bg-slate-800 hover:bg-surface-container text-primary-container dark:text-white font-label-md text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1.5 border border-outline-variant/30 dark:border-slate-700"
+                >
+                  <span class="material-symbols-outlined text-sm">refresh</span>
+                  <span>Renew / Purchase Pass</span>
+                </router-link>
+              </div>
+
+              <!-- Fallback if no packages exist -->
+              <div 
+                v-if="packages.length === 0" 
+                class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-outline-variant/30 dark:border-slate-800 text-center"
+              >
+                <div class="w-12 h-12 rounded-full bg-secondary-fixed text-primary flex items-center justify-center mx-auto mb-3">
+                  <span class="material-symbols-outlined text-2xl">confirmation_number</span>
+                </div>
+                <h3 class="font-headline-sm text-sm font-bold text-primary-container dark:text-white mb-1">
+                  No Active Studio Passes
+                </h3>
+                <p class="font-body-sm text-xs text-on-surface-variant dark:text-slate-400 mb-4">
+                  Purchase a session bundle for preferential rates and priority booking at our Karen sanctuary.
+                </p>
+                <router-link 
+                  to="/services" 
+                  class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-container hover:bg-primary text-white font-label-sm text-xs font-semibold transition-all"
+                >
+                  <span>Explore Passes</span>
+                  <span class="material-symbols-outlined text-xs">arrow_forward</span>
+                </router-link>
+              </div>
             </div>
 
             <!-- Studio Sanctuary Quick Info -->
             <div class="bg-surface-container-lowest dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-outline-variant/30 dark:border-slate-800 text-xs text-on-surface-variant dark:text-slate-400 space-y-3">
-              <h4 class="font-label-md text-sm font-semibold text-primary-container dark:text-white">Studio Guidelines</h4>
-              <p>• <strong>Arrival:</strong> Please arrive 5–10 minutes before your slot.</p>
+              <h4 class="font-label-md text-sm font-semibold text-primary-container dark:text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary text-base">info</span>
+                <span>Studio Guidelines</span>
+              </h4>
+              <p>• <strong>Arrival:</strong> Please arrive 5–10 minutes before your slot to settle in calmly.</p>
               <p>• <strong>Attire:</strong> Form-fitting movement wear and grip socks are recommended for Reformer stability.</p>
-              <p>• <strong>Cancellation:</strong> 24h notice required for complimentary rescheduling.</p>
+              <p>• <strong>Cancellation:</strong> 24h notice required for complimentary rescheduling. Your pass session will be instantly restored.</p>
             </div>
           </div>
         </div>
@@ -305,13 +406,15 @@ import AppNavbar from '@/components/AppNavbar.vue';
 import AppBottomNav from '@/components/AppBottomNav.vue';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useAuthStore } from '@/stores/authStore';
-import { getBookings, cancelBooking, rescheduleBooking } from '@/services/api';
+import { getBookings, getUserPackages, cancelBooking, rescheduleBooking } from '@/services/api';
 
 const bookingStore = useBookingStore();
 const authStore = useAuthStore();
 
 const activeTab = ref('upcoming');
 const bookings = ref([]);
+const packages = ref([]);
+const loading = ref(false);
 
 const rescheduleModalOpen = ref(false);
 const activeBooking = ref(null);
@@ -319,25 +422,63 @@ const newDate = ref(new Date().toISOString().split('T')[0]);
 const newSlot = ref('09:30 AM');
 
 onMounted(async () => {
-  await loadBookings();
+  await loadData();
 });
 
-async function loadBookings() {
+async function loadData() {
+  loading.value = true;
   try {
-    const userName = authStore.user.value.name || 'Sarah';
-    const list = await getBookings(userName);
-    bookings.value = list;
+    const userName = authStore.user.value?.name || authStore.user.value?.username || '';
+    const [bookingList, packageList] = await Promise.all([
+      getBookings(userName, 'all', true),
+      getUserPackages(userName)
+    ]);
+    bookings.value = Array.isArray(bookingList) ? bookingList : [];
+    packages.value = Array.isArray(packageList) ? packageList : [];
   } catch (e) {
-    console.warn('Could not load bookings:', e);
+    console.warn('Could not load bookings and passes:', e);
+  } finally {
+    loading.value = false;
   }
 }
 
+// Pass Credits Calculation
+const totalRemainingCredits = computed(() => {
+  return packages.value.reduce((sum, p) => sum + (p.remaining_sessions || 0), 0);
+});
+
+// Counts
 const upcomingCount = computed(() => bookings.value.filter(b => b.status === 'confirmed').length);
 const pastCount = computed(() => bookings.value.filter(b => b.status === 'completed').length);
+const cancelledCount = computed(() => bookings.value.filter(b => b.status === 'cancelled').length);
 
 const displayedBookings = computed(() => {
+  if (activeTab.value === 'upcoming') {
+    return bookings.value.filter(b => b.status === 'confirmed' || b.status === 'pending_payment');
+  }
   return bookings.value.filter(b => b.status === activeTab.value);
 });
+
+// Next Reserved Session Display
+const nextSessionDisplay = computed(() => {
+  const confirmed = bookings.value
+    .filter(b => b.status === 'confirmed')
+    .sort((a, b) => new Date(`${a.booking_date}T${a.time_slot}`) - new Date(`${b.booking_date}T${b.time_slot}`));
+  
+  if (confirmed.length === 0) return 'None';
+  const b = confirmed[0];
+  return `${b.time_slot}`;
+});
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  try {
+    const d = new Date(dateString);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return dateString;
+  }
+}
 
 function openRescheduleModal(booking) {
   activeBooking.value = booking;
@@ -352,18 +493,18 @@ async function submitReschedule() {
     await rescheduleBooking(activeBooking.value.id, newDate.value, newSlot.value);
     rescheduleModalOpen.value = false;
     bookingStore.showToast('Session rescheduled successfully! 🌿', 'success');
-    await loadBookings();
+    await loadData();
   } catch (e) {
     bookingStore.showToast(e.message || 'Reschedule failed', 'error');
   }
 }
 
 async function handleCancel(bookingId) {
-  if (!confirm('Are you sure you want to cancel this session? You will retain your pass credit.')) return;
+  if (!confirm('Are you sure you want to cancel this session? Any pass session used will be restored.')) return;
   try {
     await cancelBooking(bookingId);
     bookingStore.showToast('Session cancelled. Pass credit restored.', 'info');
-    await loadBookings();
+    await loadData();
   } catch (e) {
     bookingStore.showToast(e.message || 'Cancellation failed', 'error');
   }

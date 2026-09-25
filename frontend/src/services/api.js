@@ -1,10 +1,10 @@
 const API_BASE = '/api';
 
 function getHeaders(custom = {}) {
-  const token = localStorage.getItem('karina_auth_token');
+  const token = localStorage.getItem('karina_access_token') || localStorage.getItem('karina_auth_token');
   const headers = { 'Content-Type': 'application/json', ...custom };
   if (token) {
-    headers['Authorization'] = `Token ${token}`;
+    headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
 }
@@ -37,10 +37,11 @@ export async function getTimeSlots(serviceId, date) {
   return res.json();
 }
 
-export async function getBookings(userName = 'Sarah', status = 'all') {
+export async function getBookings(userName = '', status = 'all', personal = false) {
   const params = new URLSearchParams();
   if (userName) params.append('user_name', userName);
   if (status && status !== 'all') params.append('status', status);
+  if (personal) params.append('personal', '1');
   
   const res = await fetch(`${API_BASE}/bookings/?${params.toString()}`, {
     headers: getHeaders()
@@ -304,11 +305,11 @@ export async function issueCustomerPass(customerId, passData) {
 
 // Media Upload APIs (Phase 2)
 export async function uploadServiceImage(serviceId, file) {
-  const token = localStorage.getItem('karina_auth_token');
+  const token = localStorage.getItem('karina_access_token') || localStorage.getItem('karina_auth_token');
   const formData = new FormData();
   formData.append('image', file);
   const headers = {};
-  if (token) headers['Authorization'] = `Token ${token}`;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}/admin/services/${serviceId}/image/`, {
     method: 'POST',
@@ -332,11 +333,11 @@ export async function deleteServiceImage(serviceId) {
 }
 
 export async function uploadSessionBanner(slotId, file) {
-  const token = localStorage.getItem('karina_auth_token');
+  const token = localStorage.getItem('karina_access_token') || localStorage.getItem('karina_auth_token');
   const formData = new FormData();
   formData.append('banner_image', file);
   const headers = {};
-  if (token) headers['Authorization'] = `Token ${token}`;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}/admin/slots/${slotId}/banner/`, {
     method: 'POST',
@@ -360,11 +361,11 @@ export async function deleteSessionBanner(slotId) {
 }
 
 export async function uploadProfileAvatar(file) {
-  const token = localStorage.getItem('karina_auth_token');
+  const token = localStorage.getItem('karina_access_token') || localStorage.getItem('karina_auth_token');
   const formData = new FormData();
   formData.append('avatar', file);
   const headers = {};
-  if (token) headers['Authorization'] = `Token ${token}`;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_BASE}/auth/profile/avatar/`, {
     method: 'POST',
@@ -384,6 +385,28 @@ export async function deleteProfileAvatar() {
     headers: getHeaders()
   });
   if (!res.ok) throw new Error('Failed to remove profile picture');
+  return res.json();
+}
+
+export async function getUserProfile() {
+  const res = await fetch(`${API_BASE}/auth/profile/`, {
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to load user profile');
+  return res.json();
+}
+
+export async function updateUserProfile(payload) {
+  const res = await fetch(`${API_BASE}/auth/profile/`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const message = Object.values(err).flat().join(' ') || 'Failed to update profile';
+    throw new Error(message);
+  }
   return res.json();
 }
 

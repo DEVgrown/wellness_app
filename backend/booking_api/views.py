@@ -10,9 +10,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Service, TimeSlot, Booking, UserPackage, PaymentTransaction, AuditLog
+from .models import UserProfile, Service, TimeSlot, Booking, UserPackage, PaymentTransaction, AuditLog
 from .permissions import IsVerifiedStudioAdmin, IsStudioAdminUser, IsOwnerOrAdmin
 from .serializers import (
     ServiceSerializer,
@@ -143,11 +143,12 @@ class BookingListCreateView(APIView):
 
     def get(self, request):
         if request.user and request.user.is_authenticated:
-            if request.user.is_staff or getattr(request.user, 'is_studio_admin', False):
-                user_id = request.query_params.get('user_id')
+            is_personal = request.query_params.get('personal') in ['1', 'true', 'True']
+            user_id = request.query_params.get('user_id')
+            if (request.user.is_staff or getattr(request.user, 'is_studio_admin', False)) and not is_personal and not user_id:
                 queryset = Booking.objects.select_related('service', 'slot', 'user').all()
-                if user_id:
-                    queryset = queryset.filter(user_id=user_id)
+            elif user_id and user_id != 'me' and (request.user.is_staff or getattr(request.user, 'is_studio_admin', False)):
+                queryset = Booking.objects.select_related('service', 'slot', 'user').filter(user_id=user_id)
             else:
                 queryset = Booking.objects.select_related('service', 'slot', 'user').filter(user=request.user)
         else:
@@ -190,21 +191,40 @@ class BookingListCreateView(APIView):
                 service = Service.objects.get(id=service_id)
                 authoritative_price = service.price_kes if currency == 'KES' else service.price_eur
 
-                # 3. Decrement slot capacity atomically
+                # 3. Handle pass deduction if payment_method is pass
+                if payment_method == 'pass':
+                    user_pass = UserPackage.objects.select_for_update().filter(
+                        user=request.user,
+                        remaining_sessions__gt=0
+                    ).order_by('valid_until', 'created_at').first()
+                    if not user_pass:
+                        return Response(
+                            {'error': 'You do not have an active studio pass with available sessions. Please top up or choose a different payment method.'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    user_pass.remaining_sessions -= 1
+                    user_pass.save(update_fields=['remaining_sessions'])
+                    booking_status = 'confirmed'
+                elif payment_method in ['studio', 'card']:
+                    booking_status = 'confirmed'
+                else:
+                    booking_status = 'pending_payment'
+
+                # 4. Decrement slot capacity atomically
                 slot.spots_left -= 1
                 if slot.spots_left == 0:
                     slot.is_full = True
                 slot.save(update_fields=['spots_left', 'is_full', 'updated_at'])
 
-                # 4. Generate unique payment reference
+                # 5. Generate unique payment reference
                 ref = 'QK' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
-                # 5. Create booking record
+                # 6. Create booking record
                 booking = Booking.objects.create(
                     user=request.user,
                     service=service,
                     slot=slot,
-                    status='confirmed' if payment_method in ['studio', 'card'] else 'pending_payment',
+                    status=booking_status,
                     payment_method=payment_method,
                     payment_reference=ref,
                     currency=currency,
@@ -217,7 +237,7 @@ class BookingListCreateView(APIView):
                 status=status.HTTP_409_CONFLICT
             )
 
-        # 6. Async notification task
+        # 7. Async notification task
         try:
             user_display = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
             send_booking_confirmation_task.delay(
@@ -255,6 +275,13 @@ class BookingCancelView(APIView):
             booking.status = 'cancelled'
             booking.notes = f"{booking.notes} [Cancelled by {request.user.username}]".strip()
             booking.save(update_fields=['status', 'notes'])
+
+            # Restore pass session if booking was paid with pass
+            if booking.payment_method == 'pass':
+                user_pass = UserPackage.objects.filter(user=booking.user).order_by('-created_at').first()
+                if user_pass:
+                    user_pass.remaining_sessions = min(user_pass.total_sessions, user_pass.remaining_sessions + 1)
+                    user_pass.save(update_fields=['remaining_sessions'])
 
             # Restore slot capacity atomically
             slot = TimeSlot.objects.select_for_update().filter(id=booking.slot_id).first()
@@ -389,14 +416,14 @@ class UserPackageView(APIView):
 # ==========================================
 
 class SignUpView(APIView):
-    """Register a new member account and issue authentication token."""
+    """Register a new member account and issue Simple JWT authentication tokens."""
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
+            refresh = RefreshToken.for_user(user)
 
             # Issue complimentary welcome studio pass
             UserPackage.objects.create(
@@ -408,7 +435,9 @@ class SignUpView(APIView):
             )
 
             return Response({
-                'token': token.key,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'token': str(refresh.access_token),  # Backward compatibility alias
                 'user': UserProfileSerializer(user, context={'request': request}).data,
                 'message': 'Account created successfully! Welcome to Karina Wellness.'
             }, status=status.HTTP_201_CREATED)
@@ -416,16 +445,18 @@ class SignUpView(APIView):
 
 
 class LoginView(APIView):
-    """Authenticate user with username or email and return session token."""
+    """Authenticate user with username or email and return Simple JWT session tokens."""
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            token, _ = Token.objects.get_or_create(user=user)
+            refresh = RefreshToken.for_user(user)
             return Response({
-                'token': token.key,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'token': str(refresh.access_token),  # Backward compatibility alias
                 'user': UserProfileSerializer(user, context={'request': request}).data,
                 'message': f'Welcome back, {user.first_name or user.username}!'
             }, status=status.HTTP_200_OK)
@@ -433,16 +464,18 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    """Invalidate current active token."""
+    """Invalidate current active session / blacklist refresh token."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
-            if hasattr(request.user, 'auth_token'):
-                request.user.auth_token.delete()
+            refresh_token = request.data.get('refresh')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
             return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
 
 
 class UserProfileView(APIView):
@@ -625,7 +658,7 @@ class AdminOverviewView(APIView):
         confirmed_bookings = Booking.objects.filter(status='confirmed').count()
         total_revenue_kes = Booking.objects.filter(status__in=['confirmed', 'completed'], currency='KES').aggregate(total=Sum('total_amount'))['total'] or 0
         total_revenue_eur = Booking.objects.filter(status__in=['confirmed', 'completed'], currency='EUR').aggregate(total=Sum('total_amount'))['total'] or 0
-        active_customers = User.objects.filter(role=User.Role.CLIENT, is_active=True).count()
+        active_customers = User.objects.filter(profile__role=UserProfile.Role.CLIENT, is_active=True).count()
         total_slots = TimeSlot.objects.count()
         full_slots = TimeSlot.objects.filter(is_full=True).count()
 
@@ -851,7 +884,7 @@ class AdminCustomerListView(APIView):
         search_query = request.query_params.get('search', '').lower().strip()
         status_filter = request.query_params.get('status', 'all')
 
-        users = User.objects.prefetch_related('bookings', 'packages').all().order_by('-date_joined')
+        users = User.objects.prefetch_related('bookings', 'packages', 'profile').all().order_by('-date_joined')
 
         customers_data = []
         for u in users:
@@ -922,11 +955,12 @@ class AdminCustomerListView(APIView):
                 password=data['password'],
                 first_name=first_name,
                 last_name=last_name,
-                phone=data.get('phone', ''),
-                role=data.get('role', User.Role.CLIENT),
                 is_staff=data.get('is_staff', False)
             )
-            Token.objects.get_or_create(user=user)
+            if hasattr(user, 'profile'):
+                user.profile.phone = data.get('phone', '')
+                user.profile.role = data.get('role', UserProfile.Role.CLIENT)
+                user.profile.save()
 
             UserPackage.objects.create(
                 user=user,

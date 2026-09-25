@@ -1,19 +1,37 @@
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Service, TimeSlot, Booking, UserPackage, PaymentTransaction, AuditLog
+from .models import UserProfile, Service, TimeSlot, Booking, UserPackage, PaymentTransaction, AuditLog
+
+
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Wellness Profile & RBAC'
+    fields = ('role', 'phone', 'avatar', 'bio', 'emergency_contact', 'somatic_notes')
+
+
+admin.site.unregister(User)
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ('username', 'email', 'role', 'phone', 'is_staff', 'is_active', 'date_joined')
-    list_filter = ('role', 'is_staff', 'is_active', 'date_joined')
-    search_fields = ('username', 'email', 'first_name', 'last_name', 'phone')
+    inlines = (UserProfileInline,)
+    list_display = ('username', 'email', 'first_name', 'last_name', 'get_role', 'is_staff', 'is_active', 'date_joined')
+    list_filter = ('profile__role', 'is_staff', 'is_active', 'date_joined')
+    search_fields = ('username', 'email', 'first_name', 'last_name', 'profile__phone')
     ordering = ('-date_joined',)
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ('Studio Role & Somatic Profile', {
-            'fields': ('role', 'phone', 'avatar', 'bio', 'emergency_contact', 'somatic_notes')
-        }),
-    )
+
+    def get_role(self, obj):
+        return obj.profile.get_role_display() if hasattr(obj, 'profile') else 'Client'
+    get_role.short_description = 'Studio Role'
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'role', 'phone', 'created_at', 'updated_at')
+    list_filter = ('role', 'created_at')
+    search_fields = ('user__username', 'user__email', 'phone')
 
 
 @admin.register(Service)
@@ -60,5 +78,5 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
 class AuditLogAdmin(admin.ModelAdmin):
     list_display = ('timestamp', 'actor', 'action', 'target_entity', 'target_id', 'ip_address')
     list_filter = ('action', 'target_entity', 'timestamp')
-    search_fields = ('action', 'target_entity', 'target_id', 'actor__username', 'ip_address')
-    readonly_fields = ('timestamp', 'actor', 'action', 'target_entity', 'target_id', 'ip_address', 'metadata')
+    search_fields = ('actor__username', 'action', 'target_entity', 'target_id')
+    readonly_fields = ('timestamp',)

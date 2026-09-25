@@ -1,15 +1,16 @@
 import uuid
 import os
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import FileExtensionValidator
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 
 def user_avatar_upload_path(instance, filename):
     ext = filename.split('.')[-1].lower()
-    return f"avatars/user_{instance.id}/{uuid.uuid4().hex[:12]}.{ext}"
+    user_id = instance.user_id if hasattr(instance, 'user_id') else instance.id
+    return f"avatars/user_{user_id}/{uuid.uuid4().hex[:12]}.{ext}"
 
 
 def service_image_upload_path(instance, filename):
@@ -23,7 +24,11 @@ def session_banner_upload_path(instance, filename):
     return f"sessions/{instance.id}/{uuid.uuid4().hex[:12]}.{ext}"
 
 
-class User(AbstractUser):
+class UserProfile(models.Model):
+    """
+    User Profile extending Django's standard User model to support
+    granular Role-Based Access Control (RBAC), wellness bio, contact, and somatic notes.
+    """
     class Role(models.TextChoices):
         CLIENT = 'client', 'Client / Member'
         COACH = 'coach', 'Coach / Practitioner'
@@ -31,6 +36,7 @@ class User(AbstractUser):
         SUPERADMIN = 'superadmin', 'Platform Superadmin'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(
         max_length=20,
         choices=Role.choices,
@@ -45,6 +51,28 @@ class User(AbstractUser):
         blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])],
         help_text="User profile picture (JPG, PNG, WebP up to 5MB)"
+    )
+    avatar_shape = models.CharField(
+        max_length=20,
+        default='circle',
+        choices=[
+            ('circle', 'Circle'),
+            ('squircle', 'Squircle / Rounded'),
+            ('square', 'Classic Square')
+        ],
+        help_text="Display shape preference for profile photo"
+    )
+    avatar_position = models.CharField(
+        max_length=50,
+        default='center',
+        choices=[
+            ('center', 'Center'),
+            ('top', 'Top Focus'),
+            ('bottom', 'Bottom Focus'),
+            ('left', 'Left Alignment'),
+            ('right', 'Right Alignment')
+        ],
+        help_text="Object position focal alignment for avatar image"
     )
     bio = models.TextField(blank=True, help_text="Short bio or personal wellness focus")
     emergency_contact = models.CharField(max_length=255, blank=True)
@@ -62,25 +90,76 @@ class User(AbstractUser):
 
     @property
     def is_studio_admin(self):
-        return self.role in [self.Role.STUDIO_ADMIN, self.Role.SUPERADMIN] or self.is_staff or self.is_superuser
+        return self.role in [self.Role.STUDIO_ADMIN, self.Role.SUPERADMIN] or self.user.is_staff or self.user.is_superuser
 
     def remove_avatar(self):
-        """Cleanly remove the avatar file from disk/storage."""
+        """Cleanly remove the avatar file from S3 or local storage."""
         if self.avatar:
-            if os.path.isfile(self.avatar.path):
-                os.remove(self.avatar.path)
+            try:
+                self.avatar.delete(save=False)
+            except Exception:
+                pass
             self.avatar = None
             self.save(update_fields=['avatar', 'updated_at'])
 
     def update_avatar(self, new_file):
         """Replace avatar file, deleting previous image to prevent storage leak."""
-        if self.avatar and os.path.isfile(self.avatar.path):
-            os.remove(self.avatar.path)
+        if self.avatar:
+            try:
+                self.avatar.delete(save=False)
+            except Exception:
+                pass
         self.avatar = new_file
         self.save(update_fields=['avatar', 'updated_at'])
 
     def __str__(self):
-        return f"{self.username} ({self.get_role_display()})"
+        return f"{self.user.username} ({self.get_role_display()})"
+
+
+@receiver(post_save, sender=User)
+def create_or_save_user_profile(sender, instance, created, **kwargs):
+    """Ensure every Django User automatically has a UserProfile attached."""
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+    else:
+        if hasattr(instance, 'profile'):
+            instance.profile.save()
+
+
+# Attach dynamic helper accessors to standard User model
+def _get_user_profile(user):
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    return profile
+
+
+if not hasattr(User, 'role'):
+    User.role = property(lambda self: _get_user_profile(self).role)
+if not hasattr(User, 'phone'):
+    User.phone = property(lambda self: _get_user_profile(self).phone)
+if not hasattr(User, 'avatar'):
+    User.avatar = property(lambda self: _get_user_profile(self).avatar)
+if not hasattr(User, 'avatar_shape'):
+    User.avatar_shape = property(lambda self: _get_user_profile(self).avatar_shape)
+if not hasattr(User, 'avatar_position'):
+    User.avatar_position = property(lambda self: _get_user_profile(self).avatar_position)
+if not hasattr(User, 'bio'):
+    User.bio = property(lambda self: _get_user_profile(self).bio)
+if not hasattr(User, 'emergency_contact'):
+    User.emergency_contact = property(lambda self: _get_user_profile(self).emergency_contact)
+if not hasattr(User, 'somatic_notes'):
+    User.somatic_notes = property(lambda self: _get_user_profile(self).somatic_notes)
+if not hasattr(User, 'is_client'):
+    User.is_client = property(lambda self: _get_user_profile(self).is_client)
+if not hasattr(User, 'is_coach'):
+    User.is_coach = property(lambda self: _get_user_profile(self).is_coach)
+if not hasattr(User, 'is_studio_admin'):
+    User.is_studio_admin = property(lambda self: _get_user_profile(self).is_studio_admin)
+if not hasattr(User, 'update_avatar'):
+    User.update_avatar = lambda self, new_file: _get_user_profile(self).update_avatar(new_file)
+if not hasattr(User, 'remove_avatar'):
+    User.remove_avatar = lambda self: _get_user_profile(self).remove_avatar()
+
+User.Role = UserProfile.Role
 
 
 class Service(models.Model):
@@ -94,7 +173,7 @@ class Service(models.Model):
     price_kes = models.PositiveIntegerField(default=3500)
     price_eur = models.PositiveIntegerField(default=40)
 
-    # Dual Image Support: Local Database ImageField + Optional Web URL Fallback
+    # Dual Image Support: S3 Cloud / Database ImageField + Optional Web URL Fallback
     image = models.ImageField(
         upload_to=service_image_upload_path,
         null=True,
@@ -112,16 +191,21 @@ class Service(models.Model):
 
     def update_image(self, new_file):
         """Replace service photo, purging previous physical file."""
-        if self.image and os.path.isfile(self.image.path):
-            os.remove(self.image.path)
+        if self.image:
+            try:
+                self.image.delete(save=False)
+            except Exception:
+                pass
         self.image = new_file
         self.save(update_fields=['image', 'updated_at'])
 
     def remove_image(self):
-        """Delete service photo from disk and database."""
+        """Delete service photo from storage and database."""
         if self.image:
-            if os.path.isfile(self.image.path):
-                os.remove(self.image.path)
+            try:
+                self.image.delete(save=False)
+            except Exception:
+                pass
             self.image = None
             self.save(update_fields=['image', 'updated_at'])
 
@@ -161,16 +245,21 @@ class TimeSlot(models.Model):
 
     def update_banner(self, new_file):
         """Replace session banner, purging previous file."""
-        if self.banner_image and os.path.isfile(self.banner_image.path):
-            os.remove(self.banner_image.path)
+        if self.banner_image:
+            try:
+                self.banner_image.delete(save=False)
+            except Exception:
+                pass
         self.banner_image = new_file
         self.save(update_fields=['banner_image', 'updated_at'])
 
     def remove_banner(self):
-        """Delete session banner file from disk and database."""
+        """Delete session banner file from storage and database."""
         if self.banner_image:
-            if os.path.isfile(self.banner_image.path):
-                os.remove(self.banner_image.path)
+            try:
+                self.banner_image.delete(save=False)
+            except Exception:
+                pass
             self.banner_image = None
             self.save(update_fields=['banner_image', 'updated_at'])
 
@@ -250,17 +339,26 @@ class AuditLog(models.Model):
 # Automated File Cleanup Signals
 @receiver(post_delete, sender=Service)
 def cleanup_service_image_on_delete(sender, instance, **kwargs):
-    if instance.image and os.path.isfile(instance.image.path):
-        os.remove(instance.image.path)
+    if instance.image:
+        try:
+            instance.image.delete(save=False)
+        except Exception:
+            pass
 
 
 @receiver(post_delete, sender=TimeSlot)
 def cleanup_timeslot_banner_on_delete(sender, instance, **kwargs):
-    if instance.banner_image and os.path.isfile(instance.banner_image.path):
-        os.remove(instance.banner_image.path)
+    if instance.banner_image:
+        try:
+            instance.banner_image.delete(save=False)
+        except Exception:
+            pass
 
 
-@receiver(post_delete, sender=User)
+@receiver(post_delete, sender=UserProfile)
 def cleanup_user_avatar_on_delete(sender, instance, **kwargs):
-    if instance.avatar and os.path.isfile(instance.avatar.path):
-        os.remove(instance.avatar.path)
+    if instance.avatar:
+        try:
+            instance.avatar.delete(save=False)
+        except Exception:
+            pass

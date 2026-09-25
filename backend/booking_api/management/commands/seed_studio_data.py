@@ -1,7 +1,8 @@
 import datetime
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from booking_api.models import User, Service, TimeSlot, UserPackage
+from django.contrib.auth.models import User
+from booking_api.models import UserProfile, Service, TimeSlot, UserPackage
 
 
 class Command(BaseCommand):
@@ -17,11 +18,8 @@ class Command(BaseCommand):
                 'email': 'admin@karinawellness.com',
                 'first_name': 'Karina',
                 'last_name': 'Director',
-                'role': User.Role.STUDIO_ADMIN,
                 'is_staff': True,
                 'is_superuser': True,
-                'phone': '+254 700 000 000',
-                'bio': 'Founder & Master Movement Practitioner at Karina Wellness Sanctuary.'
             }
         )
         if created:
@@ -30,6 +28,12 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Created studio administrator: admin / AdminSecure2026!'))
         else:
             self.stdout.write(self.style.SUCCESS('Studio administrator account already exists.'))
+
+        profile, _ = UserProfile.objects.get_or_create(user=admin_user)
+        profile.role = UserProfile.Role.STUDIO_ADMIN
+        profile.phone = '+254 700 000 000'
+        profile.bio = 'Founder & Master Movement Practitioner at Karina Wellness Sanctuary.'
+        profile.save()
 
         # 2. Seed baseline services
         services_data = [

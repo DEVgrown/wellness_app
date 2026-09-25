@@ -29,6 +29,11 @@ from .views import (
     AdminCustomerDetailView,
     AdminCustomerPassView
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
 
 urlpatterns = [
     path('', ApiRootView.as_view(), name='api-root'),
@@ -40,6 +45,11 @@ urlpatterns = [
     path('bookings/<uuid:pk>/reschedule/', BookingRescheduleView.as_view(), name='booking-reschedule'),
     path('payments/mpesa-stk/', MpesaSTKPushView.as_view(), name='mpesa-stk-push'),
     path('user-packages/', UserPackageView.as_view(), name='user-packages'),
+
+    # Simple JWT Authentication Endpoints
+    path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
     # Authentication & User Profile endpoints
     path('auth/signup/', SignUpView.as_view(), name='auth-signup'),
@@ -62,6 +72,6 @@ urlpatterns = [
     path('admin/bookings/', AdminBookingListView.as_view(), name='admin-bookings'),
     path('admin/bookings/<uuid:pk>/', AdminBookingDetailView.as_view(), name='admin-booking-detail'),
     path('admin/customers/', AdminCustomerListView.as_view(), name='admin-customers'),
-    path('admin/customers/<uuid:pk>/', AdminCustomerDetailView.as_view(), name='admin-customer-detail'),
-    path('admin/customers/<uuid:pk>/passes/', AdminCustomerPassView.as_view(), name='admin-customer-pass'),
+    path('admin/customers/<str:pk>/', AdminCustomerDetailView.as_view(), name='admin-customer-detail'),
+    path('admin/customers/<str:pk>/passes/', AdminCustomerPassView.as_view(), name='admin-customer-pass'),
 ]

@@ -2,7 +2,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -10,7 +10,8 @@ User = get_user_model()
 class AdminPermissionSecurityTestCase(APITestCase):
     """
     Automated security verification for SEC-001:
-    Asserts all administrative endpoints strictly enforce IsAuthenticated and IsVerifiedStudioAdmin.
+    Asserts all administrative endpoints strictly enforce IsAuthenticated and IsVerifiedStudioAdmin
+    using Simple JWT authentication and standard Django RBAC.
     """
 
     def setUp(self):
@@ -22,7 +23,8 @@ class AdminPermissionSecurityTestCase(APITestCase):
             is_staff=False,
             is_superuser=False
         )
-        self.client_token = Token.objects.create(user=self.client_user)
+        client_refresh = RefreshToken.for_user(self.client_user)
+        self.client_token = str(client_refresh.access_token)
 
         # Create verified studio admin
         self.admin_user = User.objects.create_user(
@@ -32,7 +34,10 @@ class AdminPermissionSecurityTestCase(APITestCase):
             is_staff=True,
             is_superuser=False
         )
-        self.admin_token = Token.objects.create(user=self.admin_user)
+        self.admin_user.profile.role = 'studio_admin'
+        self.admin_user.profile.save()
+        admin_refresh = RefreshToken.for_user(self.admin_user)
+        self.admin_token = str(admin_refresh.access_token)
 
         self.dummy_uuid = str(uuid.uuid4())
         self.dummy_int = self.client_user.id
@@ -70,8 +75,8 @@ class AdminPermissionSecurityTestCase(APITestCase):
             )
 
     def test_non_staff_authenticated_client_receives_403(self):
-        """Regular authenticated users without staff flag must receive 403 Forbidden."""
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.client_token.key)
+        """Regular authenticated users without staff or studio_admin flag must receive 403 Forbidden."""
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.client_token)
         for method, endpoint in self.admin_endpoints:
             if method == 'GET':
                 response = self.client.get(endpoint)
@@ -88,7 +93,7 @@ class AdminPermissionSecurityTestCase(APITestCase):
 
     def test_staff_admin_can_access_permission_check(self):
         """Staff administrators must bypass permission denial (must not receive 401 or 403)."""
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.admin_token.key)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_token)
         # Check endpoint permissions are granted for overview
         response = self.client.get('/api/admin/overview/')
         self.assertNotIn(

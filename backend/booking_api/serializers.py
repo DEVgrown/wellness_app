@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
-from .models import Service, TimeSlot, Booking, UserPackage, PaymentTransaction, AuditLog
+from .models import UserProfile, Service, TimeSlot, Booking, UserPackage, PaymentTransaction, AuditLog
 
 User = get_user_model()
 
@@ -8,13 +8,21 @@ User = get_user_model()
 class UserProfileSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    phone = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    emergency_contact = serializers.SerializerMethodField()
+    somatic_notes = serializers.SerializerMethodField()
+    avatar_shape = serializers.SerializerMethodField()
+    avatar_position = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'name',
-            'role', 'phone', 'avatar_url', 'bio', 'emergency_contact',
-            'somatic_notes', 'is_staff', 'is_superuser', 'is_active', 'date_joined'
+            'role', 'phone', 'avatar_url', 'avatar_shape', 'avatar_position',
+            'bio', 'emergency_contact', 'somatic_notes',
+            'is_staff', 'is_superuser', 'is_active', 'date_joined'
         ]
         read_only_fields = ['id', 'username', 'email', 'role', 'is_staff', 'is_superuser', 'is_active', 'date_joined']
 
@@ -22,17 +30,62 @@ class UserProfileSerializer(serializers.ModelSerializer):
         full = f"{obj.first_name} {obj.last_name}".strip()
         return full if full else obj.username
 
+    def get_role(self, obj):
+        return obj.profile.role if hasattr(obj, 'profile') else 'client'
+
+    def get_phone(self, obj):
+        return obj.profile.phone if hasattr(obj, 'profile') else ''
+
+    def get_bio(self, obj):
+        return obj.profile.bio if hasattr(obj, 'profile') else ''
+
+    def get_emergency_contact(self, obj):
+        return obj.profile.emergency_contact if hasattr(obj, 'profile') else ''
+
+    def get_somatic_notes(self, obj):
+        return obj.profile.somatic_notes if hasattr(obj, 'profile') else ''
+
+    def get_avatar_shape(self, obj):
+        return getattr(obj.profile, 'avatar_shape', 'circle') if hasattr(obj, 'profile') else 'circle'
+
+    def get_avatar_position(self, obj):
+        return getattr(obj.profile, 'avatar_position', 'center') if hasattr(obj, 'profile') else 'center'
+
     def get_avatar_url(self, obj):
         request = self.context.get('request')
-        if obj.avatar:
-            return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
+        avatar = obj.profile.avatar if hasattr(obj, 'profile') else None
+        if avatar:
+            try:
+                return request.build_absolute_uri(avatar.url) if request else avatar.url
+            except Exception:
+                return avatar.url if hasattr(avatar, 'url') else None
         return None
 
 
-class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'phone', 'bio', 'emergency_contact', 'somatic_notes']
+class UserProfileUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    bio = serializers.CharField(required=False, allow_blank=True)
+    emergency_contact = serializers.CharField(required=False, allow_blank=True)
+    somatic_notes = serializers.CharField(required=False, allow_blank=True)
+    avatar_shape = serializers.ChoiceField(choices=['circle', 'squircle', 'square'], required=False)
+    avatar_position = serializers.ChoiceField(choices=['center', 'top', 'bottom', 'left', 'right'], required=False)
+
+    def update(self, instance, validated_data):
+        if 'first_name' in validated_data:
+            instance.first_name = validated_data['first_name']
+        if 'last_name' in validated_data:
+            instance.last_name = validated_data['last_name']
+        instance.save()
+
+        if hasattr(instance, 'profile'):
+            profile = instance.profile
+            for field in ['phone', 'bio', 'emergency_contact', 'somatic_notes', 'avatar_shape', 'avatar_position']:
+                if field in validated_data:
+                    setattr(profile, field, validated_data[field])
+            profile.save()
+        return instance
 
 
 class ServiceSerializer(serializers.ModelSerializer):
@@ -164,15 +217,39 @@ class RescheduleBookingSerializer(serializers.Serializer):
 class UserPackageSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
     user_email = serializers.CharField(source='user.email', read_only=True)
+    used_sessions = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    is_active = serializers.SerializerMethodField()
 
     class Meta:
         model = UserPackage
-        fields = ['id', 'user', 'user_name', 'user_email', 'package_name', 'total_sessions', 'remaining_sessions', 'valid_until', 'created_at']
+        fields = [
+            'id', 'user', 'user_name', 'user_email', 'package_name',
+            'total_sessions', 'remaining_sessions', 'used_sessions',
+            'status', 'is_active', 'valid_until', 'created_at'
+        ]
         read_only_fields = ['id', 'created_at']
 
     def get_user_name(self, obj):
         full = f"{obj.user.first_name} {obj.user.last_name}".strip()
         return full if full else obj.user.username
+
+    def get_used_sessions(self, obj):
+        return max(0, obj.total_sessions - obj.remaining_sessions)
+
+    def get_status(self, obj):
+        from datetime import date
+        today = date.today()
+        if obj.remaining_sessions <= 0:
+            return 'fully_used'
+        if obj.valid_until and obj.valid_until < today:
+            return 'expired'
+        return 'active'
+
+    def get_is_active(self, obj):
+        from datetime import date
+        today = date.today()
+        return obj.remaining_sessions > 0 and (not obj.valid_until or obj.valid_until >= today)
 
 
 class IssuePackagePassSerializer(serializers.Serializer):
@@ -211,7 +288,7 @@ class CustomerCreateSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=6, default='Welcome123!')
     name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     phone = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    role = serializers.ChoiceField(choices=User.Role.choices, default=User.Role.CLIENT)
+    role = serializers.ChoiceField(choices=UserProfile.Role.choices, default=UserProfile.Role.CLIENT)
     is_staff = serializers.BooleanField(default=False)
 
     def validate_username(self, value):
@@ -225,10 +302,30 @@ class CustomerCreateSerializer(serializers.Serializer):
         return value
 
 
-class CustomerUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'email', 'phone', 'role', 'is_active', 'is_staff', 'bio', 'emergency_contact']
+class CustomerUpdateSerializer(serializers.Serializer):
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    role = serializers.ChoiceField(choices=UserProfile.Role.choices, required=False)
+    is_active = serializers.BooleanField(required=False)
+    is_staff = serializers.BooleanField(required=False)
+    bio = serializers.CharField(required=False, allow_blank=True)
+    emergency_contact = serializers.CharField(required=False, allow_blank=True)
+
+    def update(self, instance, validated_data):
+        for field in ['first_name', 'last_name', 'email', 'is_active', 'is_staff']:
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
+        instance.save()
+
+        if hasattr(instance, 'profile'):
+            profile = instance.profile
+            for p_field in ['phone', 'role', 'bio', 'emergency_contact']:
+                if p_field in validated_data:
+                    setattr(profile, p_field, validated_data[p_field])
+            profile.save()
+        return instance
 
 
 class AdminBookingUpdateSerializer(serializers.ModelSerializer):
@@ -283,9 +380,11 @@ class UserRegisterSerializer(serializers.Serializer):
             email=validated_data['email'],
             password=validated_data['password'],
             first_name=first_name,
-            last_name=last_name,
-            phone=validated_data.get('phone', '')
+            last_name=last_name
         )
+        if hasattr(user, 'profile'):
+            user.profile.phone = validated_data.get('phone', '')
+            user.profile.save(update_fields=['phone'])
         return user
 
 

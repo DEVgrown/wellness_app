@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 from booking_api.models import Service, TimeSlot, Booking
 
 User = get_user_model()
@@ -22,9 +22,10 @@ class AuthoritativePricingTestCase(TestCase):
             email='alice@example.com',
             password='Password123!'
         )
-        self.token = Token.objects.create(user=self.user)
+        refresh = RefreshToken.for_user(self.user)
+        self.token = str(refresh.access_token)
         self.client = APIClient()
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token)
 
         self.service = Service.objects.create(
             slug='authoritative-reformer',

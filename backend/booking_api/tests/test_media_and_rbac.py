@@ -5,7 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework.authtoken.models import Token
+from rest_framework_simplejwt.tokens import RefreshToken
 from booking_api.models import Service, TimeSlot
 
 User = get_user_model()
@@ -31,24 +31,28 @@ class MediaAndRBACTestCase(TestCase):
         self.client_user = User.objects.create_user(
             username='client_bob',
             email='bob@example.com',
-            password='Password123!',
-            role=User.Role.CLIENT
+            password='Password123!'
         )
-        self.client_token = Token.objects.create(user=self.client_user)
+        self.client_user.profile.role = 'client'
+        self.client_user.profile.save()
+        client_refresh = RefreshToken.for_user(self.client_user)
+        self.client_token = str(client_refresh.access_token)
         self.api_client = APIClient()
-        self.api_client.credentials(HTTP_AUTHORIZATION='Token ' + self.client_token.key)
+        self.api_client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.client_token)
 
         # 2. Studio Admin
         self.admin_user = User.objects.create_user(
             username='admin_elena',
             email='elena@sanctuary.ke',
             password='AdminPassword123!',
-            role=User.Role.STUDIO_ADMIN,
             is_staff=True
         )
-        self.admin_token = Token.objects.create(user=self.admin_user)
+        self.admin_user.profile.role = 'studio_admin'
+        self.admin_user.profile.save()
+        admin_refresh = RefreshToken.for_user(self.admin_user)
+        self.admin_token = str(admin_refresh.access_token)
         self.admin_api = APIClient()
-        self.admin_api.credentials(HTTP_AUTHORIZATION='Token ' + self.admin_token.key)
+        self.admin_api.credentials(HTTP_AUTHORIZATION='Bearer ' + self.admin_token)
 
         # 3. Baseline service
         self.service = Service.objects.create(
@@ -70,13 +74,13 @@ class MediaAndRBACTestCase(TestCase):
         self.assertIsNotNone(response.data['avatar_url'])
 
         self.client_user.refresh_from_db()
-        self.assertTrue(bool(self.client_user.avatar))
+        self.assertTrue(bool(self.client_user.profile.avatar))
 
         # Delete avatar
         del_response = self.api_client.delete('/api/auth/profile/avatar/')
         self.assertEqual(del_response.status_code, status.HTTP_200_OK)
         self.client_user.refresh_from_db()
-        self.assertFalse(bool(self.client_user.avatar))
+        self.assertFalse(bool(self.client_user.profile.avatar))
 
     def test_client_cannot_upload_service_image(self):
         """Regular client is forbidden from uploading service images (admin only)."""
