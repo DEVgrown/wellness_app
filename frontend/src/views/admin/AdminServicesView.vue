@@ -193,9 +193,73 @@
                 <input v-model="form.location_display" type="text" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-primary-container/20 text-on-surface dark:text-white" />
               </div>
 
-              <div class="sm:col-span-2">
-                <label class="block font-label-sm text-xs font-semibold mb-1 text-on-surface dark:text-slate-300">Image URL</label>
-                <input v-model="form.image_url" type="url" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-primary-container/20 text-on-surface dark:text-white" />
+              <!-- Dual Photo Upload System -->
+              <div class="sm:col-span-2 space-y-2">
+                <label class="block font-label-sm text-xs font-semibold text-on-surface dark:text-slate-300">
+                  Service Photography (JPG, PNG, WebP up to 10MB)
+                </label>
+                
+                <div class="flex items-start gap-4">
+                  <!-- Live Thumbnail Preview -->
+                  <div class="relative w-24 h-24 rounded-2xl overflow-hidden border border-outline-variant/30 dark:border-slate-700 bg-surface-container-low dark:bg-slate-800 shrink-0 flex items-center justify-center">
+                    <img 
+                      v-if="previewUrl || form.image_url" 
+                      :src="previewUrl || form.image_url" 
+                      alt="Service Preview" 
+                      class="w-full h-full object-cover"
+                    />
+                    <div v-else class="text-center p-2 text-on-surface-variant dark:text-slate-500">
+                      <span class="material-symbols-outlined text-2xl">image</span>
+                      <p class="text-[9px] mt-0.5">No Photo</p>
+                    </div>
+                  </div>
+
+                  <!-- Upload Controls -->
+                  <div class="flex-1 space-y-2">
+                    <div 
+                      @click="$refs.fileInput.click()"
+                      class="border-2 border-dashed border-outline-variant/40 dark:border-slate-700 hover:border-secondary dark:hover:border-sky-400 rounded-2xl p-3.5 text-center cursor-pointer transition-colors bg-surface-container-low/40 dark:bg-slate-800/40"
+                    >
+                      <input 
+                        ref="fileInput" 
+                        type="file" 
+                        accept=".jpg,.jpeg,.png,.webp" 
+                        @change="handleFileSelect" 
+                        class="hidden" 
+                      />
+                      <span class="material-symbols-outlined text-xl text-secondary dark:text-sky-400">cloud_upload</span>
+                      <p class="text-xs font-medium text-on-surface dark:text-slate-200 mt-1">
+                        {{ selectedFile ? selectedFile.name : 'Click to upload photo from computer' }}
+                      </p>
+                      <p class="text-[10px] text-on-surface-variant dark:text-slate-400">Directly stored in platform media storage</p>
+                    </div>
+
+                    <div v-if="selectedFile || previewUrl" class="flex items-center gap-2">
+                      <button 
+                        @click="clearSelectedFile" 
+                        type="button" 
+                        class="text-[11px] font-semibold text-error hover:underline flex items-center gap-1"
+                      >
+                        <span class="material-symbols-outlined text-xs">close</span> Clear Selected File
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Fallback URL Accordion -->
+                <details class="text-xs text-on-surface-variant dark:text-slate-400 mt-2">
+                  <summary class="cursor-pointer font-medium hover:text-secondary select-none">
+                    Or enter external Web URL fallback...
+                  </summary>
+                  <div class="mt-2">
+                    <input 
+                      v-model="form.image_url" 
+                      type="url" 
+                      placeholder="https://images.unsplash.com/..." 
+                      class="w-full px-3.5 py-2 rounded-xl bg-surface-container-low dark:bg-slate-800 border border-outline-variant/30 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-primary-container/20 text-on-surface dark:text-white" 
+                    />
+                  </div>
+                </details>
               </div>
 
               <div class="sm:col-span-2">
@@ -222,7 +286,14 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { getAdminServices, createAdminService, updateAdminService, deleteAdminService } from '@/services/api';
+import { 
+  getAdminServices, 
+  createAdminService, 
+  updateAdminService, 
+  deleteAdminService,
+  uploadServiceImage,
+  deleteServiceImage 
+} from '@/services/api';
 
 const services = ref([]);
 const search = ref('');
@@ -233,6 +304,9 @@ const editingId = ref(null);
 const submitting = ref(false);
 const notice = ref('');
 const noticeType = ref('success');
+
+const selectedFile = ref(null);
+const previewUrl = ref(null);
 
 const categories = [
   { id: 'all', label: 'All Offerings' },
@@ -256,7 +330,7 @@ const form = reactive({
   badge: '',
   location_display: 'Karen Studio Sanctuary, Nairobi',
   location_type: 'all nairobi',
-  image_url: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
+  image_url: '',
   description: ''
 });
 
@@ -269,6 +343,28 @@ const filteredServices = computed(() => {
   });
 });
 
+function handleFileSelect(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  // Validate 10MB limit
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Image file size exceeds the 10 MB limit.');
+    return;
+  }
+
+  selectedFile.value = file;
+  previewUrl.value = URL.createObjectURL(file);
+}
+
+function clearSelectedFile() {
+  selectedFile.value = null;
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value);
+    previewUrl.value = null;
+  }
+}
+
 async function loadServices() {
   try {
     services.value = await getAdminServices();
@@ -278,6 +374,7 @@ async function loadServices() {
 }
 
 function openModal(item = null) {
+  clearSelectedFile();
   if (item) {
     isEditing.value = true;
     editingId.value = item.id;
@@ -290,7 +387,7 @@ function openModal(item = null) {
     form.badge = item.badge;
     form.location_display = item.location_display;
     form.location_type = item.location_type;
-    form.image_url = item.image_url;
+    form.image_url = item.image_url || '';
     form.description = item.description;
   } else {
     isEditing.value = false;
@@ -313,15 +410,23 @@ function openModal(item = null) {
 async function submitService() {
   submitting.value = true;
   try {
+    let savedService = null;
     if (isEditing.value) {
-      await updateAdminService(editingId.value, form);
+      savedService = await updateAdminService(editingId.value, form);
       notice.value = `Updated "${form.title}" successfully.`;
     } else {
-      await createAdminService(form);
+      savedService = await createAdminService(form);
       notice.value = `Created offering "${form.title}".`;
     }
+
+    // If an image file was selected, upload it directly to server storage
+    if (selectedFile.value && savedService?.id) {
+      await uploadServiceImage(savedService.id, selectedFile.value);
+    }
+
     noticeType.value = 'success';
     showModal.value = false;
+    clearSelectedFile();
     await loadServices();
   } catch (err) {
     notice.value = err.message || 'Action failed.';

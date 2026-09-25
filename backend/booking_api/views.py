@@ -1,14 +1,19 @@
 import random
 import string
 import logging
+from datetime import datetime, date
+from django.db import transaction, OperationalError, DatabaseError
+from django.db.models import Sum, Count, Q
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authtoken.models import Token
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from .supabase_client import SupabaseService, get_supabase
-from django.contrib.auth.models import User
+from .models import UserProfile, Service, TimeSlot, Booking, UserPackage, PaymentTransaction, AuditLog
+from .permissions import IsVerifiedStudioAdmin, IsStudioAdminUser, IsOwnerOrAdmin
 from .serializers import (
     ServiceSerializer,
     ServiceCreateUpdateSerializer,
@@ -26,552 +31,871 @@ from .serializers import (
     UserPackageSerializer,
     UserRegisterSerializer,
     UserLoginSerializer,
-    UserProfileSerializer
+    UserProfileSerializer,
+    UserProfileUpdateSerializer
 )
-from datetime import datetime, timedelta, date
 from .tasks import process_mpesa_payment_task, send_booking_confirmation_task
 
+User = get_user_model()
 logger = logging.getLogger(__name__)
 
-from rest_framework.decorators import api_view
-from rest_framework.reverse import reverse
 
 class ApiRootView(APIView):
     """Karina Wellness Booking Platform API Directory."""
     permission_classes = [AllowAny]
+
     def get(self, request):
         return Response({
-            'message': 'Welcome to Karina Wellness Booking API (Connected to Supabase)',
+            'message': 'Welcome to Karina Wellness Booking API (Unified PostgreSQL Engine)',
             'endpoints': {
                 'services': request.build_absolute_uri('services/'),
                 'slots': request.build_absolute_uri('slots/'),
                 'bookings': request.build_absolute_uri('bookings/'),
                 'mpesa_stk_push': request.build_absolute_uri('payments/mpesa-stk/'),
                 'user_packages': request.build_absolute_uri('user-packages/'),
+                'auth_profile': request.build_absolute_uri('auth/profile/'),
+                'auth_profile_avatar': request.build_absolute_uri('auth/profile/avatar/'),
                 'auth_signup': request.build_absolute_uri('auth/signup/'),
                 'auth_login': request.build_absolute_uri('auth/login/'),
                 'auth_logout': request.build_absolute_uri('auth/logout/'),
                 'auth_me': request.build_absolute_uri('auth/me/'),
             },
-            'database': 'Remote Supabase (Booking-Karina)',
+            'database': 'Unified PostgreSQL (Django ORM)',
             'frontend_url': 'http://localhost:5173/'
         })
 
+
+# ==========================================
+# SERVICE CATALOG VIEWS
+# ==========================================
+
 class ServiceListView(APIView):
     """List services with optional category and location filtering."""
+    permission_classes = [AllowAny]
+
     def get(self, request):
         category = request.query_params.get('category', 'all')
         location = request.query_params.get('location', 'all')
-        services = SupabaseService.get_services(category=category, location=location)
-        serializer = ServiceSerializer(services, many=True)
+        queryset = Service.objects.all().order_by('created_at')
+
+        if category and category.lower() != 'all':
+            queryset = queryset.filter(category__iexact=category)
+        if location and location.lower() != 'all':
+            queryset = queryset.filter(location_type__icontains=location)
+
+        serializer = ServiceSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
+
 
 class ServiceDetailView(APIView):
     """Retrieve details for a single service."""
+    permission_classes = [AllowAny]
+
     def get(self, request, pk):
-        service = SupabaseService.get_service_by_id(pk)
-        if not service:
+        try:
+            service = Service.objects.get(pk=pk)
+        except Service.DoesNotExist:
             return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ServiceSerializer(service)
+        serializer = ServiceSerializer(service, context={'request': request})
         return Response(serializer.data)
+
+
+# ==========================================
+# SCHEDULE & TIME SLOT VIEWS
+# ==========================================
 
 class TimeSlotListView(APIView):
-    """Retrieve time slots by date and service."""
+    """Retrieve live schedule time slots by date and service."""
+    permission_classes = [AllowAny]
+
     def get(self, request):
         service_id = request.query_params.get('service_id')
-        date = request.query_params.get('date', '2024-10-26')
-        slots = SupabaseService.get_time_slots(service_id=service_id, date=date)
-        serializer = TimeSlotSerializer(slots, many=True)
+        date_str = request.query_params.get('date')
+
+        queryset = TimeSlot.objects.select_related('service').all().order_by('slot_date', 'start_time')
+
+        if service_id:
+            queryset = queryset.filter(service_id=service_id)
+        if date_str:
+            try:
+                target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                queryset = queryset.filter(slot_date=target_date)
+            except ValueError:
+                pass
+
+        serializer = TimeSlotSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
+
+# ==========================================
+# BOOKING & PESSIMISTIC CONCURRENCY ENGINE
+# ==========================================
+
 class BookingListCreateView(APIView):
-    """List user bookings or create a new booking."""
+    """
+    GET: List user bookings (or all if admin requested).
+    POST: Atomic slot reservation with pessimistic row lock (guarantee zero overbooking).
+    """
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
     def get(self, request):
-        user_name = request.query_params.get('user_name', 'Sarah')
-        booking_status = request.query_params.get('status', 'all')
-        bookings = SupabaseService.get_bookings(user_name=user_name, status=booking_status)
-        serializer = BookingSerializer(bookings, many=True)
+        if request.user and request.user.is_authenticated:
+            is_personal = request.query_params.get('personal') in ['1', 'true', 'True']
+            user_id = request.query_params.get('user_id')
+            if (request.user.is_staff or getattr(request.user, 'is_studio_admin', False)) and not is_personal and not user_id:
+                queryset = Booking.objects.select_related('service', 'slot', 'user').all()
+            elif user_id and user_id != 'me' and (request.user.is_staff or getattr(request.user, 'is_studio_admin', False)):
+                queryset = Booking.objects.select_related('service', 'slot', 'user').filter(user_id=user_id)
+            else:
+                queryset = Booking.objects.select_related('service', 'slot', 'user').filter(user=request.user)
+        else:
+            user_name = request.query_params.get('user_name')
+            if user_name:
+                queryset = Booking.objects.select_related('service', 'slot', 'user').filter(
+                    Q(user__username__iexact=user_name) | Q(user__first_name__iexact=user_name)
+                )
+            else:
+                queryset = Booking.objects.none()
+
+        booking_status = request.query_params.get('status')
+        if booking_status and booking_status.lower() != 'all':
+            queryset = queryset.filter(status=booking_status)
+
+        serializer = BookingSerializer(queryset.order_by('-created_at'), many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = BookingCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            data = serializer.validated_data
-            
-            # Generate reference
-            payment_method = data.get('payment_method', 'mpesa')
-            ref = 'QK' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            
-            booking_payload = {
-                'service_id': str(data['service_id']) if data.get('service_id') else None,
-                'service_title': data['service_title'],
-                'user_name': data.get('user_name', 'Sarah'),
-                'user_email': data.get('user_email', 'sarah@example.com'),
-                'user_phone': data.get('user_phone', '+254 712 345 678'),
-                'booking_date': str(data['booking_date']),
-                'time_slot': data['time_slot'],
-                'location_name': data.get('location_name', 'Karen Studio, Nairobi'),
-                'status': 'confirmed',
-                'payment_method': payment_method,
-                'payment_reference': ref,
-                'currency': data.get('currency', 'KES'),
-                'total_amount': data['total_amount'],
-                'notes': data.get('notes', ''),
-            }
-            
-            created = SupabaseService.create_booking(booking_payload)
-            if not created:
-                return Response({'error': 'Failed to save booking to Supabase'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        slot_id = request.data.get('slot_id')
+        service_id = request.data.get('service_id')
+        payment_method = request.data.get('payment_method', 'mpesa')
+        currency = request.data.get('currency', 'KES')
+        notes = request.data.get('notes', '')
 
-            # Trigger Celery confirmation task asynchronously (with graceful local fallback)
-            try:
-                send_booking_confirmation_task.delay(
-                    booking_id=created['id'],
-                    user_email=created['user_email'],
-                    service_title=created['service_title'],
-                    booking_date=created['booking_date'],
-                    time_slot=created['time_slot']
+        if not slot_id or not service_id:
+            return Response({'error': 'Both slot_id and service_id are required to reserve a session.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                # 1. Pessimistic row-level lock on slot
+                slot = TimeSlot.objects.select_for_update().filter(id=slot_id, service_id=service_id).first()
+                if not slot:
+                    return Response({'error': 'Specified schedule slot does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+
+                if slot.spots_left <= 0 or slot.is_full:
+                    return Response({'error': 'Time slot is fully booked. Please select another slot.'}, status=status.HTTP_409_CONFLICT)
+
+                # 2. Server-side authoritative price determination (eliminates SEC-006 client tampering)
+                service = Service.objects.get(id=service_id)
+                authoritative_price = service.price_kes if currency == 'KES' else service.price_eur
+
+                # 3. Handle pass deduction if payment_method is pass
+                if payment_method == 'pass':
+                    user_pass = UserPackage.objects.select_for_update().filter(
+                        user=request.user,
+                        remaining_sessions__gt=0
+                    ).order_by('valid_until', 'created_at').first()
+                    if not user_pass:
+                        return Response(
+                            {'error': 'You do not have an active studio pass with available sessions. Please top up or choose a different payment method.'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    user_pass.remaining_sessions -= 1
+                    user_pass.save(update_fields=['remaining_sessions'])
+                    booking_status = 'confirmed'
+                elif payment_method in ['studio', 'card']:
+                    booking_status = 'confirmed'
+                else:
+                    booking_status = 'pending_payment'
+
+                # 4. Decrement slot capacity atomically
+                slot.spots_left -= 1
+                if slot.spots_left == 0:
+                    slot.is_full = True
+                slot.save(update_fields=['spots_left', 'is_full', 'updated_at'])
+
+                # 5. Generate unique payment reference
+                ref = 'QK' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+                # 6. Create booking record
+                booking = Booking.objects.create(
+                    user=request.user,
+                    service=service,
+                    slot=slot,
+                    status=booking_status,
+                    payment_method=payment_method,
+                    payment_reference=ref,
+                    currency=currency,
+                    total_amount=authoritative_price,
+                    notes=notes
                 )
-            except Exception as e:
-                logger.warning(f"Celery dispatch failed (running synchronously/offline): {e}")
+        except OperationalError:
+            return Response(
+                {'error': 'Time slot is currently being locked/reserved by another concurrent client. Please retry or choose another slot.'},
+                status=status.HTTP_409_CONFLICT
+            )
 
-            out_serializer = BookingSerializer(created)
-            return Response(out_serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # 7. Async notification task
+        try:
+            user_display = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+            send_booking_confirmation_task.delay(
+                booking_id=str(booking.id),
+                user_email=request.user.email,
+                service_title=service.title,
+                booking_date=str(slot.slot_date),
+                time_slot=slot.start_time
+            )
+        except Exception as e:
+            logger.warning(f"Async confirmation task dispatch offline: {e}")
+
+        out_serializer = BookingSerializer(booking, context={'request': request})
+        return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+
 
 class BookingCancelView(APIView):
-    """Cancel an active booking."""
+    """Cancel an active booking and restore slot capacity."""
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
-        updated = SupabaseService.update_booking(pk, {
-            'status': 'cancelled',
-            'notes': 'Cancelled by client. M-Pesa refund scheduled.'
-        })
-        if not updated:
-            return Response({'error': 'Booking not found or cannot be cancelled'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = BookingSerializer(updated)
+        with transaction.atomic():
+            try:
+                booking = Booking.objects.select_for_update().get(pk=pk)
+            except Booking.DoesNotExist:
+                return Response({'error': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Permission check: owner or studio admin
+            if not request.user.is_staff and not getattr(request.user, 'is_studio_admin', False) and booking.user != request.user:
+                return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+            if booking.status == 'cancelled':
+                return Response({'message': 'Booking is already cancelled.'}, status=status.HTTP_200_OK)
+
+            booking.status = 'cancelled'
+            booking.notes = f"{booking.notes} [Cancelled by {request.user.username}]".strip()
+            booking.save(update_fields=['status', 'notes'])
+
+            # Restore pass session if booking was paid with pass
+            if booking.payment_method == 'pass':
+                user_pass = UserPackage.objects.filter(user=booking.user).order_by('-created_at').first()
+                if user_pass:
+                    user_pass.remaining_sessions = min(user_pass.total_sessions, user_pass.remaining_sessions + 1)
+                    user_pass.save(update_fields=['remaining_sessions'])
+
+            # Restore slot capacity atomically
+            slot = TimeSlot.objects.select_for_update().filter(id=booking.slot_id).first()
+            if slot:
+                slot.spots_left = min(slot.total_capacity, slot.spots_left + 1)
+                if slot.spots_left > 0:
+                    slot.is_full = False
+                slot.save(update_fields=['spots_left', 'is_full', 'updated_at'])
+
+        serializer = BookingSerializer(booking, context={'request': request})
         return Response(serializer.data)
 
+
 class BookingRescheduleView(APIView):
-    """Reschedule an active booking."""
+    """Reschedule an active booking to a new time slot atomically."""
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         serializer = RescheduleBookingSerializer(data=request.data)
-        if serializer.is_valid():
-            data = serializer.validated_data
-            updated = SupabaseService.update_booking(pk, {
-                'booking_date': str(data['booking_date']),
-                'time_slot': data['time_slot']
-            })
-            if not updated:
-                return Response({'error': 'Booking not found or cannot be rescheduled'}, status=status.HTTP_404_NOT_FOUND)
-            out_serializer = BookingSerializer(updated)
-            return Response(out_serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        new_slot_id = serializer.validated_data['new_slot_id']
+
+        with transaction.atomic():
+            try:
+                booking = Booking.objects.select_for_update().get(pk=pk)
+            except Booking.DoesNotExist:
+                return Response({'error': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            if not request.user.is_staff and not getattr(request.user, 'is_studio_admin', False) and booking.user != request.user:
+                return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+            if booking.status == 'cancelled':
+                return Response({'error': 'Cannot reschedule a cancelled booking.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Lock new slot
+            new_slot = TimeSlot.objects.select_for_update().filter(id=new_slot_id, service_id=booking.service_id).first()
+            if not new_slot:
+                return Response({'error': 'Target slot not found or belongs to a different service.'}, status=status.HTTP_404_NOT_FOUND)
+
+            if new_slot.spots_left <= 0 or new_slot.is_full:
+                return Response({'error': 'Target slot is fully booked.'}, status=status.HTTP_409_CONFLICT)
+
+            # Restore old slot
+            old_slot = TimeSlot.objects.select_for_update().filter(id=booking.slot_id).first()
+            if old_slot:
+                old_slot.spots_left = min(old_slot.total_capacity, old_slot.spots_left + 1)
+                if old_slot.spots_left > 0:
+                    old_slot.is_full = False
+                old_slot.save(update_fields=['spots_left', 'is_full', 'updated_at'])
+
+            # Decrement new slot
+            new_slot.spots_left -= 1
+            if new_slot.spots_left == 0:
+                new_slot.is_full = True
+            new_slot.save(update_fields=['spots_left', 'is_full', 'updated_at'])
+
+            # Update booking
+            booking.slot = new_slot
+            booking.save(update_fields=['slot'])
+
+        out_serializer = BookingSerializer(booking, context={'request': request})
+        return Response(out_serializer.data)
+
+
+# ==========================================
+# PAYMENTS & PACKAGES
+# ==========================================
 
 class MpesaSTKPushView(APIView):
-    """Trigger Safaricom M-Pesa STK Push simulation."""
+    """Trigger Safaricom M-Pesa STK Push."""
     def post(self, request):
         serializer = MpesaPaymentSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
             booking_id = data.get('booking_id')
             phone = data['phone_number']
-            amount = data['amount']
-            
+            amount = data.get('amount', 3500)
+
             ref = 'QK' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-            
-            # Attempt to queue task in Celery
+            checkout_id = f'ws_CO_{ref}'
+
+            if booking_id:
+                try:
+                    booking = Booking.objects.get(pk=booking_id)
+                    PaymentTransaction.objects.create(
+                        booking=booking,
+                        provider='daraja_mpesa',
+                        checkout_request_id=checkout_id,
+                        amount=amount,
+                        currency=data.get('currency', 'KES'),
+                        phone_number=phone,
+                        status='initiated'
+                    )
+                except Booking.DoesNotExist:
+                    pass
+
             task_id = None
             try:
-                async_res = process_mpesa_payment_task.delay(booking_id, phone, amount)
+                async_res = process_mpesa_payment_task.delay(str(booking_id) if booking_id else '', phone, amount)
                 task_id = async_res.id
             except Exception as e:
                 logger.warning(f"Celery queue unavailable, falling back to direct acknowledgment: {e}")
-            
+
             return Response({
                 'success': True,
                 'status': 'INITIATED',
-                'message': f'STK Push prompt sent to {phone}. Please check your phone and enter M-Pesa PIN.',
-                'checkout_request_id': f'ws_CO_{ref}',
+                'message': f'STK Push prompt sent to {phone}. Please check your handset and enter M-Pesa PIN.',
+                'checkout_request_id': checkout_id,
                 'receipt_reference': ref,
                 'task_id': task_id
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class UserPackageView(APIView):
-    """Retrieve active passes and packages."""
+    """Retrieve active passes and packages for authenticated user."""
     def get(self, request):
-        user_name = request.query_params.get('user_name', 'Sarah')
-        packages = SupabaseService.get_user_packages(user_name=user_name)
+        if request.user and request.user.is_authenticated:
+            packages = UserPackage.objects.filter(user=request.user).order_by('-created_at')
+        else:
+            user_name = request.query_params.get('user_name', 'Sarah')
+            packages = UserPackage.objects.filter(user__username__iexact=user_name).order_by('-created_at')
+
         serializer = UserPackageSerializer(packages, many=True)
         return Response(serializer.data)
 
+
+# ==========================================
+# AUTHENTICATION & PROFILE VIEWS
+# ==========================================
+
 class SignUpView(APIView):
-    """Register a new user, create auth token, and initialize user session."""
+    """Register a new member account and issue Simple JWT authentication tokens."""
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
-            
-            # Seed a complimentary starter pass in Supabase if desired
-            try:
-                display_name = f"{user.first_name} {user.last_name}".strip() or user.username
-                # Check if package exists, or seed one
-                SupabaseService.get_client().table('user_packages').insert({
-                    'user_name': display_name,
-                    'package_name': 'Welcome Complimentary Pass',
-                    'total_sessions': 1,
-                    'remaining_sessions': 1,
-                    'valid_until': '30 Nov 2026'
-                }).execute()
-            except Exception as e:
-                logger.warning(f"Could not seed starter package for {user.username}: {e}")
+            refresh = RefreshToken.for_user(user)
+
+            # Issue complimentary welcome studio pass
+            UserPackage.objects.create(
+                user=user,
+                package_name='Welcome Complimentary Pass',
+                total_sessions=1,
+                remaining_sessions=1,
+                valid_until=date(2026, 12, 31)
+            )
 
             return Response({
-                'token': token.key,
-                'user': UserProfileSerializer(user).data,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'token': str(refresh.access_token),  # Backward compatibility alias
+                'user': UserProfileSerializer(user, context={'request': request}).data,
                 'message': 'Account created successfully! Welcome to Karina Wellness.'
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LoginView(APIView):
-    """Authenticate user with username/email and password."""
+    """Authenticate user with username or email and return Simple JWT session tokens."""
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            token, _ = Token.objects.get_or_create(user=user)
+            refresh = RefreshToken.for_user(user)
             return Response({
-                'token': token.key,
-                'user': UserProfileSerializer(user).data,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'token': str(refresh.access_token),  # Backward compatibility alias
+                'user': UserProfileSerializer(user, context={'request': request}).data,
                 'message': f'Welcome back, {user.first_name or user.username}!'
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class LogoutView(APIView):
-    """Log out user by invalidating the active auth token."""
+    """Invalidate current active session / blacklist refresh token."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
-            if hasattr(request.user, 'auth_token'):
-                request.user.auth_token.delete()
+            refresh_token = request.data.get('refresh')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
             return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+
 
 class UserProfileView(APIView):
-    """Get current authenticated user profile."""
+    """Current authenticated user profile view."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response({
-            'user': UserProfileSerializer(request.user).data
+            'user': UserProfileSerializer(request.user, context={'request': request}).data
         })
 
 
+class UserProfileDetailView(APIView):
+    """
+    GET: Retrieve current authenticated user profile including avatar URL and role.
+    PATCH: Update profile details (first_name, last_name, phone, bio, emergency_contact).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserProfileSerializer(request.user, context={'request': request})
+        return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UserProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            full_profile = UserProfileSerializer(request.user, context={'request': request})
+            return Response(full_profile.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserAvatarManageView(APIView):
+    """
+    POST: Upload or replace profile picture (multipart/form-data).
+    DELETE: Remove existing profile picture and clean up storage.
+    """
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        if 'avatar' not in request.FILES:
+            return Response({'error': 'No avatar image file was provided in upload.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        avatar_file = request.FILES['avatar']
+
+        # 1. Validate file extension
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'webp'}
+        ext = avatar_file.name.split('.')[-1].lower()
+        if ext not in allowed_extensions:
+            return Response({'error': f'Invalid image format .{ext}. Allowed: JPG, PNG, WebP.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Validate file size (max 5 MB)
+        if avatar_file.size > 5 * 1024 * 1024:
+            return Response({'error': 'Avatar file exceeds the 5 MB maximum size limit.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. Cleanly update avatar
+        request.user.update_avatar(avatar_file)
+        avatar_url = request.build_absolute_uri(request.user.avatar.url)
+
+        return Response({
+            'message': 'Profile picture updated successfully! 🌿',
+            'avatar_url': avatar_url
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        if not request.user.avatar:
+            return Response({'message': 'No profile picture currently set.'}, status=status.HTTP_200_OK)
+
+        request.user.remove_avatar()
+        return Response({
+            'message': 'Profile picture removed successfully.',
+            'avatar_url': None
+        }, status=status.HTTP_200_OK)
+
+
 # ==========================================
-# ADMIN FUNCTIONALITIES & DASHBOARD VIEWS
+# ADMIN MEDIA UPLOAD VIEWS
+# ==========================================
+
+class AdminServiceImageManageView(APIView):
+    """
+    POST: Upload or replace service photo (multipart/form-data with key 'image').
+    DELETE: Remove service photo from database and storage.
+    """
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk):
+        try:
+            service = Service.objects.get(pk=pk)
+        except Service.DoesNotExist:
+            return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'image' not in request.FILES:
+            return Response({'error': 'No image file provided in upload.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        image_file = request.FILES['image']
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'webp'}
+        ext = image_file.name.split('.')[-1].lower()
+        if ext not in allowed_extensions:
+            return Response({'error': f'Invalid format .{ext}. Allowed: JPG, PNG, WebP.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if image_file.size > 10 * 1024 * 1024:
+            return Response({'error': 'Image exceeds the 10 MB maximum size limit.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        service.update_image(image_file)
+        full_url = request.build_absolute_uri(service.image.url)
+
+        return Response({
+            'message': 'Service photo uploaded and saved successfully! 🌿',
+            'image_url': full_url
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        try:
+            service = Service.objects.get(pk=pk)
+        except Service.DoesNotExist:
+            return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        service.remove_image()
+        return Response({'message': 'Service photo removed successfully.', 'image_url': None}, status=status.HTTP_200_OK)
+
+
+class AdminSessionBannerManageView(APIView):
+    """
+    POST: Upload or replace custom session/workshop banner (multipart/form-data with key 'banner_image').
+    DELETE: Remove session banner.
+    """
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk):
+        try:
+            slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist:
+            return Response({'error': 'Session slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'banner_image' not in request.FILES:
+            return Response({'error': 'No banner image file provided in upload.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        banner_file = request.FILES['banner_image']
+        allowed_extensions = {'jpg', 'jpeg', 'png', 'webp'}
+        ext = banner_file.name.split('.')[-1].lower()
+        if ext not in allowed_extensions:
+            return Response({'error': f'Invalid format .{ext}. Allowed: JPG, PNG, WebP.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if banner_file.size > 10 * 1024 * 1024:
+            return Response({'error': 'Banner image exceeds the 10 MB maximum size limit.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        slot.update_banner(banner_file)
+        full_url = request.build_absolute_uri(slot.banner_image.url)
+
+        return Response({
+            'message': 'Session promotional banner uploaded successfully!',
+            'banner_image_url': full_url
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        try:
+            slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist:
+            return Response({'error': 'Session slot not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        slot.remove_banner()
+        return Response({'message': 'Session banner removed successfully.', 'banner_image_url': None}, status=status.HTTP_200_OK)
+
+
+# ==========================================
+# ADMIN MANAGEMENT & CRM VIEWS
 # ==========================================
 
 class AdminOverviewView(APIView):
     """KPI Metrics and live analytics for Admin Dashboard."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
-        metrics = SupabaseService.get_admin_metrics()
-        recent_bookings = SupabaseService.get_all_bookings()[:6]
+        now = datetime.now()
+        total_bookings = Booking.objects.count()
+        confirmed_bookings = Booking.objects.filter(status='confirmed').count()
+        total_revenue_kes = Booking.objects.filter(status__in=['confirmed', 'completed'], currency='KES').aggregate(total=Sum('total_amount'))['total'] or 0
+        total_revenue_eur = Booking.objects.filter(status__in=['confirmed', 'completed'], currency='EUR').aggregate(total=Sum('total_amount'))['total'] or 0
+        active_customers = User.objects.filter(profile__role=UserProfile.Role.CLIENT, is_active=True).count()
+        total_slots = TimeSlot.objects.count()
+        full_slots = TimeSlot.objects.filter(is_full=True).count()
+
+        recent_bookings = Booking.objects.select_related('service', 'slot', 'user').order_by('-created_at')[:6]
+
         return Response({
-            'metrics': metrics,
-            'recent_bookings': BookingSerializer(recent_bookings, many=True).data
+            'metrics': {
+                'total_bookings': total_bookings,
+                'confirmed_bookings': confirmed_bookings,
+                'total_revenue_kes': total_revenue_kes,
+                'total_revenue_eur': total_revenue_eur,
+                'active_customers': active_customers,
+                'occupancy_rate': round((full_slots / total_slots * 100), 1) if total_slots > 0 else 0,
+                'total_slots': total_slots
+            },
+            'recent_bookings': BookingSerializer(recent_bookings, many=True, context={'request': request}).data
         })
 
 
 class AdminServiceListCreateView(APIView):
     """Admin endpoint to list all services and create new offerings."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
-        services = SupabaseService.get_services(category='all', location='all')
-        serializer = ServiceSerializer(services, many=True)
+        services = Service.objects.all().order_by('-created_at')
+        serializer = ServiceSerializer(services, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
         serializer = ServiceCreateUpdateSerializer(data=request.data)
         if serializer.is_valid():
-            data = serializer.validated_data
-            slug = data.get('slug')
-            if not slug:
-                # Generate clean slug from title
-                import re
-                slug = re.sub(r'[^a-zA-Z0-9]+', '-', data['title'].strip().lower()).strip('-')
-            
-            payload = {
-                'title': data['title'],
-                'slug': slug,
-                'category': data['category'],
-                'duration_minutes': data.get('duration_minutes', 60),
-                'location_type': data.get('location_type', 'all nairobi'),
-                'location_display': data.get('location_display', 'Karen Studio Sanctuary, Nairobi'),
-                'price_kes': data.get('price_kes', 3500),
-                'price_eur': data.get('price_eur', 40),
-                'image_url': data.get('image_url') or 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
-                'description': data['description'],
-                'badge': data.get('badge', ''),
-                'capacity': data.get('capacity', 'Small Group (4–8)')
-            }
-            created = SupabaseService.create_service(payload)
-            if not created:
-                return Response({'error': 'Failed to create service in database'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response(ServiceSerializer(created).data, status=status.HTTP_201_CREATED)
+            service = serializer.save()
+            return Response(ServiceSerializer(service, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AdminServiceDetailView(APIView):
     """Admin endpoint to retrieve, update, or remove a service."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request, pk):
-        service = SupabaseService.get_service_by_id(pk)
-        if not service:
+        try:
+            service = Service.objects.get(pk=pk)
+        except Service.DoesNotExist:
             return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
-        return Response(ServiceSerializer(service).data)
-
-    def put(self, request, pk):
-        return self.patch(request, pk)
+        return Response(ServiceSerializer(service, context={'request': request}).data)
 
     def patch(self, request, pk):
-        serializer = ServiceCreateUpdateSerializer(data=request.data, partial=True)
+        try:
+            service = Service.objects.get(pk=pk)
+        except Service.DoesNotExist:
+            return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ServiceCreateUpdateSerializer(service, data=request.data, partial=True)
         if serializer.is_valid():
-            updated = SupabaseService.update_service(pk, serializer.validated_data)
-            if not updated:
-                return Response({'error': 'Service could not be updated or not found'}, status=status.HTTP_404_NOT_FOUND)
-            return Response(ServiceSerializer(updated).data)
+            service = serializer.save()
+            return Response(ServiceSerializer(service, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        deleted = SupabaseService.delete_service(pk)
-        return Response({'message': 'Service and corresponding slots deleted successfully', 'data': deleted}, status=status.HTTP_200_OK)
+        try:
+            service = Service.objects.get(pk=pk)
+        except Service.DoesNotExist:
+            return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
+        service.delete()
+        return Response({'message': 'Service removed successfully.'}, status=status.HTTP_200_OK)
 
 
 class AdminTimeSlotListCreateView(APIView):
-    """Admin endpoint to query time slots across services and dates or create a slot."""
-    permission_classes = [AllowAny]
+    """Admin endpoint to query schedule or create single session slots."""
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
-        service_id = request.query_params.get('service_id')
-        date_param = request.query_params.get('date')
-        date_from = request.query_params.get('date_from')
-        date_to = request.query_params.get('date_to')
-
-        slots = SupabaseService.get_time_slots(
-            service_id=service_id if service_id and service_id != 'all' else None,
-            date=date_param,
-            date_from=date_from,
-            date_to=date_to
-        )
-        return Response(TimeSlotSerializer(slots, many=True).data)
+        slots = TimeSlot.objects.select_related('service').all().order_by('slot_date', 'start_time')
+        serializer = TimeSlotSerializer(slots, many=True, context={'request': request})
+        return Response(serializer.data)
 
     def post(self, request):
         serializer = TimeSlotCreateUpdateSerializer(data=request.data)
         if serializer.is_valid():
-            data = serializer.validated_data
-            payload = {
-                'service_id': data.get('service_id') or None,
-                'slot_date': str(data['slot_date']),
-                'start_time': data['start_time'],
-                'period': data.get('period', 'morning'),
-                'location_name': data.get('location_name', 'Karen Studio, Nairobi'),
-                'spots_left': data.get('spots_left', 4),
-                'is_full': data.get('is_full', False),
-                'waitlist_available': data.get('waitlist_available', False)
-            }
-            created = SupabaseService.create_time_slot(payload)
-            if not created:
-                return Response({'error': 'Failed to create time slot'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            return Response(TimeSlotSerializer(created).data, status=status.HTTP_201_CREATED)
+            slot = serializer.save()
+            return Response(TimeSlotSerializer(slot, context={'request': request}).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AdminTimeSlotBulkCreateView(APIView):
-    """Admin endpoint to bulk-generate recurring weekly slots across a date range."""
-    permission_classes = [AllowAny]
+    """Bulk generate recurring slots across specified days of week."""
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def post(self, request):
         serializer = BulkSlotGenerateSerializer(data=request.data)
-        if serializer.is_valid():
-            data = serializer.validated_data
-            start_date = data['start_date']
-            end_date = data['end_date']
-            days_of_week = set(data['days_of_week'])  # 0=Monday, 6=Sunday
-            times_list = data['times']  # list of dicts: [{'start_time': '08:00 AM', 'period': 'morning'}, ...]
-            service_id = data.get('service_id') or None
-            location_name = data.get('location_name', 'Karen Studio, Nairobi')
-            spots_left = data.get('spots_left', 4)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            if end_date < start_date:
-                return Response({'error': 'end_date must be after start_date'}, status=status.HTTP_400_BAD_REQUEST)
+        data = serializer.validated_data
+        service_id = data['service_id']
+        start_date = data['start_date']
+        end_date = data['end_date']
+        days_of_week = set(data['days_of_week'])
+        times = data['times']
+        location_name = data.get('location_name', 'Karen Sanctuary, Nairobi')
+        total_capacity = data.get('total_capacity', 6)
 
-            slots_to_create = []
-            curr = start_date
-            while curr <= end_date:
-                if curr.weekday() in days_of_week:
-                    for t in times_list:
-                        start_time = t.get('start_time', '09:00 AM')
-                        period = t.get('period', 'morning')
-                        slots_to_create.append({
-                            'service_id': str(service_id) if service_id else None,
-                            'slot_date': str(curr),
-                            'start_time': start_time,
+        try:
+            service = Service.objects.get(pk=service_id)
+        except Service.DoesNotExist:
+            return Response({'error': 'Target service not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        created_count = 0
+        current_date = start_date
+        one_day = datetime.timedelta(days=1) if hasattr(datetime, 'timedelta') else None
+        from datetime import timedelta
+        one_day = timedelta(days=1)
+
+        while current_date <= end_date:
+            if current_date.weekday() in days_of_week:
+                for t in times:
+                    start_time = t.get('start_time', '09:00 AM')
+                    period = t.get('period', 'Morning')
+                    _, created = TimeSlot.objects.get_or_create(
+                        service=service,
+                        slot_date=current_date,
+                        start_time=start_time,
+                        defaults={
                             'period': period,
                             'location_name': location_name,
-                            'spots_left': spots_left,
-                            'is_full': False,
-                            'waitlist_available': False
-                        })
-                curr += timedelta(days=1)
+                            'total_capacity': total_capacity,
+                            'spots_left': total_capacity,
+                            'is_full': False
+                        }
+                    )
+                    if created:
+                        created_count += 1
+            current_date += one_day
 
-            created_slots = SupabaseService.bulk_create_time_slots(slots_to_create)
-            return Response({
-                'message': f'Successfully generated {len(created_slots)} session slots across selected dates.',
-                'count': len(created_slots),
-                'slots': TimeSlotSerializer(created_slots[:20], many=True).data
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'message': f'Successfully generated {created_count} schedule slots.',
+            'created_count': created_count
+        }, status=status.HTTP_201_CREATED)
 
 
 class AdminTimeSlotDetailView(APIView):
-    """Admin endpoint to edit or delete a time slot."""
-    permission_classes = [AllowAny]
+    """Admin endpoint to retrieve, edit, or delete a single time slot."""
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
+
+    def get(self, request, pk):
+        try:
+            slot = TimeSlot.objects.select_related('service').get(pk=pk)
+        except TimeSlot.DoesNotExist:
+            return Response({'error': 'Time slot not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(TimeSlotSerializer(slot, context={'request': request}).data)
 
     def patch(self, request, pk):
-        serializer = TimeSlotCreateUpdateSerializer(data=request.data, partial=True)
+        try:
+            slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist:
+            return Response({'error': 'Time slot not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = TimeSlotCreateUpdateSerializer(slot, data=request.data, partial=True)
         if serializer.is_valid():
-            clean_data = {}
-            for k, v in serializer.validated_data.items():
-                if k == 'slot_date':
-                    clean_data[k] = str(v)
-                elif k == 'service_id':
-                    clean_data[k] = str(v) if v else None
-                else:
-                    clean_data[k] = v
-            updated = SupabaseService.update_time_slot(pk, clean_data)
-            if not updated:
-                return Response({'error': 'Time slot not found or update failed'}, status=status.HTTP_404_NOT_FOUND)
-            return Response(TimeSlotSerializer(updated).data)
+            slot = serializer.save()
+            return Response(TimeSlotSerializer(slot, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        deleted = SupabaseService.delete_time_slot(pk)
-        return Response({'message': 'Time slot deleted successfully', 'data': deleted}, status=status.HTTP_200_OK)
+        try:
+            slot = TimeSlot.objects.get(pk=pk)
+        except TimeSlot.DoesNotExist:
+            return Response({'error': 'Time slot not found'}, status=status.HTTP_404_NOT_FOUND)
+        slot.delete()
+        return Response({'message': 'Time slot deleted successfully.'}, status=status.HTTP_200_OK)
 
 
 class AdminBookingListView(APIView):
-    """Admin endpoint to view and filter all attendee bookings."""
-    permission_classes = [AllowAny]
+    """Admin endpoint to retrieve all bookings with multi-filter search."""
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
-        status_filter = request.query_params.get('status', 'all')
-        date_filter = request.query_params.get('date')
-        service_id = request.query_params.get('service_id')
-        search_query = request.query_params.get('search')
+        queryset = Booking.objects.select_related('service', 'slot', 'user').all().order_by('-created_at')
+        status_filter = request.query_params.get('status')
+        if status_filter and status_filter.lower() != 'all':
+            queryset = queryset.filter(status=status_filter)
 
-        bookings = SupabaseService.get_all_bookings(
-            status=status_filter,
-            date=date_filter,
-            service_id=service_id,
-            search=search_query
-        )
-        return Response(BookingSerializer(bookings, many=True).data)
+        serializer = BookingSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
 
 
 class AdminBookingDetailView(APIView):
-    """Admin endpoint to modify booking status, reschedule, add coach notes, or delete."""
-    permission_classes = [AllowAny]
+    """Admin endpoint to update booking status, coach notes, or cancel."""
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
+
+    def get(self, request, pk):
+        try:
+            booking = Booking.objects.select_related('service', 'slot', 'user').get(pk=pk)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(BookingSerializer(booking, context={'request': request}).data)
 
     def patch(self, request, pk):
-        serializer = AdminBookingUpdateSerializer(data=request.data, partial=True)
+        try:
+            booking = Booking.objects.get(pk=pk)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminBookingUpdateSerializer(booking, data=request.data, partial=True)
         if serializer.is_valid():
-            clean_data = {}
-            for k, v in serializer.validated_data.items():
-                if k == 'booking_date':
-                    clean_data[k] = str(v)
-                else:
-                    clean_data[k] = v
-            updated = SupabaseService.update_booking(pk, clean_data)
-            if not updated:
-                return Response({'error': 'Booking not found or update failed'}, status=status.HTTP_404_NOT_FOUND)
-            return Response(BookingSerializer(updated).data)
+            booking = serializer.save()
+            return Response(BookingSerializer(booking, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        deleted = SupabaseService.delete_booking(pk)
-        return Response({'message': 'Booking deleted successfully', 'data': deleted}, status=status.HTTP_200_OK)
+        try:
+            booking = Booking.objects.get(pk=pk)
+        except Booking.DoesNotExist:
+            return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+        booking.delete()
+        return Response({'message': 'Booking deleted successfully.'}, status=status.HTTP_200_OK)
 
-
-# ==========================================
-# ADMIN CUSTOMER & USER MANAGEMENT VIEWS
-# ==========================================
 
 class AdminCustomerListView(APIView):
-    """Admin endpoint to retrieve all registered customers with aggregate stats or manually onboard new clients."""
-    permission_classes = [AllowAny]
+    """Admin CRM endpoint to list all customers with computed spend, pass balances, and bookings."""
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request):
         search_query = request.query_params.get('search', '').lower().strip()
         status_filter = request.query_params.get('status', 'all')
 
-        users = User.objects.all().order_by('-date_joined')
-        all_bookings = SupabaseService.get_all_bookings()
-        all_packages = get_supabase().table('user_packages').select('*').execute().data or []
-
-        # Index bookings by email and username
-        bookings_by_email = {}
-        bookings_by_name = {}
-        for b in all_bookings:
-            em = (b.get('user_email') or '').lower().strip()
-            nm = (b.get('user_name') or '').lower().strip()
-            if em:
-                bookings_by_email.setdefault(em, []).append(b)
-            if nm:
-                bookings_by_name.setdefault(nm, []).append(b)
-
-        # Index packages by username
-        packages_by_name = {}
-        for p in all_packages:
-            nm = (p.get('user_name') or '').lower().strip()
-            if nm:
-                packages_by_name.setdefault(nm, []).append(p)
+        users = User.objects.prefetch_related('bookings', 'packages', 'profile').all().order_by('-date_joined')
 
         customers_data = []
         for u in users:
-            u_name = f"{u.first_name} {u.last_name}".strip() or u.username
-            u_email = (u.email or '').lower().strip()
-            u_username = u.username.lower().strip()
+            u_bookings = list(u.bookings.all())
+            u_packages = list(u.packages.all())
 
-            # Find matching bookings
-            matched_bookings = bookings_by_email.get(u_email, [])
-            if not matched_bookings:
-                matched_bookings = bookings_by_name.get(u_name.lower(), [])
-            if not matched_bookings:
-                matched_bookings = bookings_by_name.get(u_username, [])
-
-            # Find matching packages
-            matched_packages = packages_by_name.get(u_name.lower(), [])
-            if not matched_packages:
-                matched_packages = packages_by_name.get(u_username, [])
-
-            total_spend_kes = sum(b.get('total_amount', 0) for b in matched_bookings if b.get('currency') == 'KES' and b.get('status') != 'cancelled')
-            total_spend_eur = sum(b.get('total_amount', 0) for b in matched_bookings if b.get('currency') == 'EUR' and b.get('status') != 'cancelled')
-            completed_count = sum(1 for b in matched_bookings if b.get('status') == 'completed')
-            confirmed_count = sum(1 for b in matched_bookings if b.get('status') == 'confirmed')
-            active_passes = sum(p.get('remaining_sessions', 0) for p in matched_packages)
-
-            phone = matched_bookings[0].get('user_phone') if matched_bookings else ''
+            total_spend_kes = sum(b.total_amount for b in u_bookings if b.currency == 'KES' and b.status != 'cancelled')
+            total_spend_eur = sum(b.total_amount for b in u_bookings if b.currency == 'EUR' and b.status != 'cancelled')
+            completed_count = sum(1 for b in u_bookings if b.status == 'completed')
+            confirmed_count = sum(1 for b in u_bookings if b.status == 'confirmed')
+            active_passes = sum(p.remaining_sessions for p in u_packages)
 
             customer_obj = {
                 'id': u.id,
@@ -579,31 +903,30 @@ class AdminCustomerListView(APIView):
                 'email': u.email,
                 'first_name': u.first_name,
                 'last_name': u.last_name,
-                'name': u_name,
-                'phone': phone,
+                'name': f"{u.first_name} {u.last_name}".strip() or u.username,
+                'phone': u.phone or '',
+                'role': u.role,
                 'is_staff': u.is_staff,
                 'is_superuser': u.is_superuser,
                 'is_active': u.is_active,
                 'date_joined': u.date_joined.strftime('%Y-%m-%d %H:%M') if u.date_joined else '',
-                'total_bookings': len(matched_bookings),
+                'total_bookings': len(u_bookings),
                 'completed_bookings': completed_count,
                 'confirmed_bookings': confirmed_count,
                 'total_spend_kes': total_spend_kes,
                 'total_spend_eur': total_spend_eur,
                 'active_passes': active_passes,
-                'packages_count': len(matched_packages)
+                'packages_count': len(u_packages)
             }
 
-            # Search filter
             if search_query:
-                haystack = f"{u.username} {u_name} {u.email} {phone}".lower()
+                haystack = f"{u.username} {customer_obj['name']} {u.email} {customer_obj['phone']}".lower()
                 if search_query not in haystack:
                     continue
 
-            # Status filter
             if status_filter == 'staff' and not u.is_staff:
                 continue
-            elif status_filter == 'active_bookers' and len(matched_bookings) == 0:
+            elif status_filter == 'active_bookers' and len(u_bookings) == 0:
                 continue
             elif status_filter == 'pass_holders' and active_passes == 0:
                 continue
@@ -634,20 +957,18 @@ class AdminCustomerListView(APIView):
                 last_name=last_name,
                 is_staff=data.get('is_staff', False)
             )
-            Token.objects.get_or_create(user=user)
+            if hasattr(user, 'profile'):
+                user.profile.phone = data.get('phone', '')
+                user.profile.role = data.get('role', UserProfile.Role.CLIENT)
+                user.profile.save()
 
-            # Seed a complimentary starter pass
-            try:
-                display_name = f"{user.first_name} {user.last_name}".strip() or user.username
-                SupabaseService.create_user_package({
-                    'user_name': display_name,
-                    'package_name': 'Welcome Complimentary Pass',
-                    'total_sessions': 1,
-                    'remaining_sessions': 1,
-                    'valid_until': '31 Dec 2026'
-                })
-            except Exception as e:
-                logger.warning(f"Could not seed initial pass for customer {user.username}: {e}")
+            UserPackage.objects.create(
+                user=user,
+                package_name='Welcome Complimentary Pass',
+                total_sessions=1,
+                remaining_sessions=1,
+                valid_until=date(2026, 12, 31)
+            )
 
             return Response({
                 'id': user.id,
@@ -662,34 +983,18 @@ class AdminCustomerListView(APIView):
 
 class AdminCustomerDetailView(APIView):
     """Admin endpoint to view deep details, all bookings, packages, or update customer account."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def get(self, request, pk):
         try:
-            u = User.objects.get(pk=pk)
+            u = User.objects.prefetch_related('bookings__service', 'bookings__slot', 'packages').get(pk=pk)
         except User.DoesNotExist:
             return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        u_name = f"{u.first_name} {u.last_name}".strip() or u.username
-        u_email = (u.email or '').lower().strip()
-        all_bookings = SupabaseService.get_all_bookings()
-        
-        # Match bookings by email or name
-        customer_bookings = [
-            b for b in all_bookings
-            if (b.get('user_email') or '').lower().strip() == u_email
-            or (b.get('user_name') or '').lower().strip() == u_name.lower()
-            or (b.get('user_name') or '').lower().strip() == u.username.lower()
-        ]
-
-        packages = SupabaseService.get_user_packages(user_name=u_name)
-        if not packages:
-            packages = SupabaseService.get_user_packages(user_name=u.username)
-
         return Response({
-            'user': UserProfileSerializer(u).data,
-            'bookings': BookingSerializer(customer_bookings, many=True).data,
-            'packages': UserPackageSerializer(packages, many=True).data
+            'user': UserProfileSerializer(u, context={'request': request}).data,
+            'bookings': BookingSerializer(u.bookings.all().order_by('-created_at'), many=True, context={'request': request}).data,
+            'packages': UserPackageSerializer(u.packages.all().order_by('-created_at'), many=True).data
         })
 
     def patch(self, request, pk):
@@ -698,27 +1003,16 @@ class AdminCustomerDetailView(APIView):
         except User.DoesNotExist:
             return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = CustomerUpdateSerializer(data=request.data, partial=True)
+        serializer = CustomerUpdateSerializer(u, data=request.data, partial=True)
         if serializer.is_valid():
-            data = serializer.validated_data
-            if 'first_name' in data:
-                u.first_name = data['first_name']
-            if 'last_name' in data:
-                u.last_name = data['last_name']
-            if 'email' in data:
-                u.email = data['email']
-            if 'is_active' in data:
-                u.is_active = data['is_active']
-            if 'is_staff' in data:
-                u.is_staff = data['is_staff']
-            u.save()
-            return Response(UserProfileSerializer(u).data)
+            u = serializer.save()
+            return Response(UserProfileSerializer(u, context={'request': request}).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AdminCustomerPassView(APIView):
     """Admin endpoint to issue or credit passes to a customer."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsVerifiedStudioAdmin]
 
     def post(self, request, pk):
         try:
@@ -729,20 +1023,16 @@ class AdminCustomerPassView(APIView):
         serializer = IssuePackagePassSerializer(data=request.data)
         if serializer.is_valid():
             data = serializer.validated_data
+            package = UserPackage.objects.create(
+                user=u,
+                package_name=data['package_name'],
+                total_sessions=data['total_sessions'],
+                remaining_sessions=data['total_sessions'],
+                valid_until=data['valid_until']
+            )
             u_name = f"{u.first_name} {u.last_name}".strip() or u.username
-            payload = {
-                'user_name': u_name,
-                'package_name': data['package_name'],
-                'total_sessions': data['total_sessions'],
-                'remaining_sessions': data['total_sessions'],
-                'valid_until': data['valid_until']
-            }
-            created = SupabaseService.create_user_package(payload)
             return Response({
                 'message': f"Issued {data['total_sessions']} sessions ({data['package_name']}) to {u_name}.",
-                'package': created
+                'package': UserPackageSerializer(package).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-

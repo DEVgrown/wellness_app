@@ -21,7 +21,7 @@ export const useAuthStore = () => {
   const isAuthenticated = computed(() => !!state.token);
   const isAdmin = computed(() => {
     if (!state.user) return false;
-    return !!(state.user.is_staff || state.user.is_superuser || state.user.role === 'admin' || state.user.username === 'admin' || (state.user.email && state.user.email.includes('admin')));
+    return Boolean(state.user.is_staff === true || state.user.is_superuser === true || state.user.role === 'studio_admin' || state.user.role === 'admin');
   });
   const loading = computed(() => state.loading);
   const error = computed(() => state.error);
@@ -39,9 +39,15 @@ export const useAuthStore = () => {
       if (!res.ok) {
         throw new Error(data.non_field_errors?.[0] || data.detail || 'Login failed. Please check your credentials.');
       }
-      state.token = data.token;
+      const accessToken = data.access || data.token;
+      const refreshToken = data.refresh;
+      state.token = accessToken;
       state.user = data.user;
-      localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.setItem('karina_access_token', accessToken);
+      localStorage.setItem(TOKEN_KEY, accessToken);
+      if (refreshToken) {
+        localStorage.setItem('karina_refresh_token', refreshToken);
+      }
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       return data;
     } catch (err) {
@@ -66,9 +72,15 @@ export const useAuthStore = () => {
         const errorMsg = data.username?.[0] || data.email?.[0] || data.password?.[0] || data.detail || 'Signup failed.';
         throw new Error(errorMsg);
       }
-      state.token = data.token;
+      const accessToken = data.access || data.token;
+      const refreshToken = data.refresh;
+      state.token = accessToken;
       state.user = data.user;
-      localStorage.setItem(TOKEN_KEY, data.token);
+      localStorage.setItem('karina_access_token', accessToken);
+      localStorage.setItem(TOKEN_KEY, accessToken);
+      if (refreshToken) {
+        localStorage.setItem('karina_refresh_token', refreshToken);
+      }
       localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       return data;
     } catch (err) {
@@ -82,12 +94,14 @@ export const useAuthStore = () => {
   async function logout() {
     if (state.token) {
       try {
+        const refreshToken = localStorage.getItem('karina_refresh_token');
         await fetch('/api/auth/logout/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Token ${state.token}`
-          }
+            'Authorization': `Bearer ${state.token}`
+          },
+          body: JSON.stringify({ refresh: refreshToken })
         });
       } catch (e) {
         console.warn('Logout request error:', e);
@@ -96,6 +110,8 @@ export const useAuthStore = () => {
     state.token = null;
     state.user = null;
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('karina_access_token');
+    localStorage.removeItem('karina_refresh_token');
     localStorage.removeItem(USER_KEY);
   }
 
@@ -104,7 +120,7 @@ export const useAuthStore = () => {
     try {
       const res = await fetch('/api/auth/me/', {
         headers: {
-          'Authorization': `Token ${state.token}`
+          'Authorization': `Bearer ${state.token}`
         }
       });
       if (res.ok) {
@@ -122,6 +138,12 @@ export const useAuthStore = () => {
     return null;
   }
 
+  function updateUser(updatedData) {
+    if (!state.user) state.user = {};
+    state.user = { ...state.user, ...updatedData };
+    localStorage.setItem(USER_KEY, JSON.stringify(state.user));
+  }
+
   return {
     token,
     user,
@@ -132,6 +154,7 @@ export const useAuthStore = () => {
     login,
     signup,
     logout,
-    checkAuth
+    checkAuth,
+    updateUser
   };
 };

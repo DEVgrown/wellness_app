@@ -88,21 +88,25 @@
         <div v-if="authStore.isAuthenticated.value" class="relative shrink-0">
           <button 
             @click="showUserMenu = !showUserMenu" 
-            class="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center ring-2 ring-secondary/30 hover:ring-secondary/70 focus:outline-none transition-all shrink-0 bg-surface-container-low dark:bg-slate-800"
+            :class="[
+              avatarShapeClass,
+              'w-9 h-9 overflow-hidden flex items-center justify-center ring-2 ring-secondary/30 hover:ring-secondary/70 focus:outline-none transition-all shrink-0 bg-surface-container-low dark:bg-slate-800'
+            ]"
             type="button"
             aria-label="User account menu"
           >
             <img 
-              v-if="authStore.user.value?.avatar" 
+              v-if="userAvatarUrl && !avatarFailed" 
               alt="Profile" 
-              class="w-full h-full object-cover rounded-full" 
-              :src="authStore.user.value.avatar" 
+              :class="[avatarPositionClass, 'w-full h-full object-cover']" 
+              :src="userAvatarUrl" 
+              @error="avatarFailed = true"
             />
             <div 
               v-else 
               class="w-full h-full bg-secondary-container dark:bg-sky-950 text-primary-container dark:text-sky-200 font-bold flex items-center justify-center text-xs shadow-inner"
             >
-              {{ (authStore.user.value?.name || authStore.user.value?.username || 'S').charAt(0).toUpperCase() }}
+              {{ userInitial }}
             </div>
           </button>
 
@@ -126,6 +130,15 @@
               </div>
             </div>
 
+            <!-- Profile & Personal Data Link (Accessible to both clients and admins) -->
+            <router-link 
+              to="/profile" 
+              class="flex items-center gap-2.5 px-4 py-2.5 text-on-surface dark:text-slate-200 hover:bg-surface-container-low dark:hover:bg-slate-800 text-xs transition-colors font-medium"
+            >
+              <span class="material-symbols-outlined text-base text-secondary">person</span>
+              <span>My Profile &amp; Settings</span>
+            </router-link>
+
             <!-- Discrete Admin Portal Link (ONLY visible if verified admin) -->
             <router-link 
               v-if="authStore.isAdmin.value" 
@@ -140,7 +153,7 @@
               to="/bookings" 
               class="flex items-center gap-2.5 px-4 py-2.5 text-on-surface dark:text-slate-200 hover:bg-surface-container-low dark:hover:bg-slate-800 text-xs transition-colors"
             >
-              <span class="material-symbols-outlined text-base text-secondary">event_available</span>
+              <span class="material-symbols-outlined text-base text-secondary">confirmation_number</span>
               <span>My Passes &amp; Bookings</span>
             </router-link>
 
@@ -228,6 +241,20 @@
         <span class="material-symbols-outlined text-sm text-secondary">chevron_right</span>
       </router-link>
 
+      <!-- Profile View / Edit (Accessible when logged in) -->
+      <router-link 
+        v-if="authStore.isAuthenticated.value"
+        @click="mobileMenuOpen = false" 
+        to="/profile" 
+        class="font-headline-sm text-base text-primary-container dark:text-white py-1.5 flex items-center justify-between"
+      >
+        <span class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary text-base">person</span>
+          My Profile &amp; Settings
+        </span>
+        <span class="material-symbols-outlined text-sm text-secondary">chevron_right</span>
+      </router-link>
+
       <!-- Admin Portal (ONLY visible to verified admin in drawer) -->
       <router-link 
         v-if="authStore.isAdmin.value"
@@ -302,7 +329,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useBookingStore } from '@/stores/bookingStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -315,6 +342,36 @@ const authStore = useAuthStore();
 
 const showUserMenu = ref(false);
 const mobileMenuOpen = ref(false);
+const avatarFailed = ref(false);
+
+const userAvatarUrl = computed(() => {
+  return authStore.user.value?.avatar || authStore.user.value?.avatar_url || null;
+});
+
+watch(userAvatarUrl, () => {
+  avatarFailed.value = false;
+});
+
+const userInitial = computed(() => {
+  const name = authStore.user.value?.name || authStore.user.value?.first_name || authStore.user.value?.username || 'S';
+  return name.charAt(0).toUpperCase();
+});
+
+const avatarShapeClass = computed(() => {
+  const shape = authStore.user.value?.avatar_shape || 'circle';
+  if (shape === 'squircle') return 'rounded-2xl';
+  if (shape === 'square') return 'rounded-lg';
+  return 'rounded-full';
+});
+
+const avatarPositionClass = computed(() => {
+  const pos = authStore.user.value?.avatar_position || 'center';
+  if (pos === 'top') return 'object-top';
+  if (pos === 'bottom') return 'object-bottom';
+  if (pos === 'left') return 'object-left';
+  if (pos === 'right') return 'object-right';
+  return 'object-center';
+});
 
 function handleLogout() {
   showUserMenu.value = false;
